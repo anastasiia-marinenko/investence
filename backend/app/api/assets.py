@@ -8,6 +8,7 @@ from app.models.database import get_db
 from app.collectors.asset_search import validate_and_save_asset
 from app.collectors.price_collector import PriceCollector
 from app.models.models import Asset, Price
+from app.collectors.news_collector import NewsCollector
 
 router = APIRouter(prefix="/api/assets", tags=["assets"])
 
@@ -144,5 +145,61 @@ def get_prices(
                 "change_pct": p.change_pct,
             }
             for p in sorted(prices, key=lambda x: x.date)
+        ]
+    }
+
+@router.get("/{ticker}/news")
+def get_news(ticker: str, refresh: bool = False, db: Session = Depends(get_db)):
+    """
+    Повертає новини для активу.
+    Використовує кеш якщо дані свіжі (менше 24 годин).
+    """
+    ticker_upper = ticker.upper().strip()
+
+    asset = db.query(Asset).filter(Asset.ticker == ticker_upper).first()
+    if not asset:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Актив '{ticker_upper}' не знайдено."
+        )
+
+    collector = NewsCollector()
+
+    if refresh:
+        # Примусово збираємо нові дані ігноруючи кеш
+        news = collector.collect_and_save(ticker_upper, asset, db)
+    else:
+        news = collector.get_cached_or_fetch(ticker_upper, asset, db)
+
+    if not news:
+        return {
+            "ticker": ticker_upper,
+            "source": "live",
+            "count": 0,
+            "news": [],
+            "message": "Новини за обраним активом не знайдено."
+        }
+
+    # Визначаємо джерело відповіді
+    from datetime import datetime, timedelta
+    cutoff = datetime.utcnow() - timedelta(hours=24)
+    source = "cache" if news[0].created_at >= cutoff else "live"
+
+    return {
+        "ticker": ticker_upper,
+        "source": source,
+        "count": len(news),
+        "news": [
+            {
+                "id": n.id,
+                "title": n.title,
+                "source": n.source,
+                "url": n.url,
+                "published_at": n.published_at.isoformat() if n.published_at else None,
+                "sentiment_score": n.sentiment_score,
+                "sentiment_label": n.sentiment_label,
+                "is_analyzed": n.is_analyzed,
+            }
+            for n in news
         ]
     }

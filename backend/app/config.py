@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str
     GITHUB_TOKEN: str
     ALPHA_VANTAGE_API_KEY: Optional[str] = None
+    GNEWS_API_KEY: Optional[str] = None
     DEBUG: bool = False
 
     model_config = {
