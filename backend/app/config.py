@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from typing import Optional
 
 class Settings(BaseSettings):
     DATABASE_URL: str
@@ -7,7 +8,10 @@ class Settings(BaseSettings):
     GITHUB_TOKEN: str
     DEBUG: bool = False
 
-    class Config:
-        env_file = ".env"
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore"  # Ігнорувати зайві змінні (POSTGRES_USER тощо)
+    }
 
 settings = Settings()
