@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.models.database import engine, Base
+from app.api.assets import router as assets_router
 
 # Створення таблиць при запуску
 Base.metadata.create_all(bind=engine)
@@ -19,6 +20,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Підключаємо роутери
+app.include_router(assets_router)
 
 @app.get("/")
 def root():
