@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.models.database import get_db
 from app.collectors.asset_search import validate_and_save_asset
+from app.collectors.price_collector import PriceCollector
+from app.models.models import Asset, Price
 
 router = APIRouter(prefix="/api/assets", tags=["assets"])
 
@@ -63,3 +65,84 @@ def validate_ticker(ticker: str, db: Session = Depends(get_db)):
         )
 
     return asset
+
+@router.get("/{ticker}/prices")
+def get_prices(
+    ticker: str,
+    days: int = 30,
+    db: Session = Depends(get_db)
+):
+    """
+    Повертає історичні цінові дані для активу за вказану кількість днів.
+    Зберігає дані у базу даних.
+    """
+    ticker_upper = ticker.upper().strip()
+
+    # Перевіряємо чи актив існує
+    asset = db.query(Asset).filter(Asset.ticker == ticker_upper).first()
+    if not asset:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Актив '{ticker_upper}' не знайдено. Спочатку валідуйте тікер."
+        )
+
+    # Перевіряємо кеш -- якщо дані свіжі (менше 24 годин) повертаємо з БД
+    from datetime import datetime, timedelta
+
+    # Перевіряємо чи є хоч якісь дані у БД для цього активу
+    existing_prices = db.query(Price).filter(
+        Price.asset_id == asset.id
+    ).order_by(Price.created_at.desc()).all()
+
+    # Кеш актуальний якщо: є дані І останній запис оновлено менше 24 годин тому
+    if existing_prices:
+        latest_record = existing_prices[0]
+        cache_age = datetime.utcnow() - latest_record.created_at
+        is_fresh = cache_age < timedelta(hours=24)
+
+        if is_fresh and len(existing_prices) >= days - 7:
+            return {
+                "ticker": ticker_upper,
+                "source": "cache",
+                "count": len(existing_prices),
+                "prices": [
+                    {
+                        "date": p.date.strftime("%Y-%m-%d"),
+                        "open": p.open,
+                        "high": p.high,
+                        "low": p.low,
+                        "close": p.close,
+                        "volume": p.volume,
+                        "change_pct": p.change_pct,
+                    }
+                    for p in sorted(existing_prices, key=lambda x: x.date)
+                ]
+            }
+
+    # Збираємо свіжі дані
+    collector = PriceCollector()
+    prices = collector.collect_and_save(ticker_upper, asset, db, days)
+
+    if not prices:
+        raise HTTPException(
+            status_code=503,
+            detail="Цінові дані тимчасово недоступні."
+        )
+
+    return {
+        "ticker": ticker_upper,
+        "source": "live",
+        "count": len(prices),
+        "prices": [
+            {
+                "date": p.date.strftime("%Y-%m-%d"),
+                "open": p.open,
+                "high": p.high,
+                "low": p.low,
+                "close": p.close,
+                "volume": p.volume,
+                "change_pct": p.change_pct,
+            }
+            for p in sorted(prices, key=lambda x: x.date)
+        ]
+    }
