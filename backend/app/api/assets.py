@@ -4,11 +4,13 @@ API ендпоінти для роботи з активами.
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from datetime import datetime, timedelta
 from app.models.database import get_db
 from app.collectors.asset_search import validate_and_save_asset
 from app.collectors.price_collector import PriceCollector
 from app.models.models import Asset, Price
 from app.collectors.news_collector import NewsCollector
+from app.collectors.github_collector import GitHubCollector
 
 router = APIRouter(prefix="/api/assets", tags=["assets"])
 
@@ -201,5 +203,55 @@ def get_news(ticker: str, refresh: bool = False, db: Session = Depends(get_db)):
                 "is_analyzed": n.is_analyzed,
             }
             for n in news
+        ]
+    }
+
+@router.get("/{ticker}/github")
+def get_github(ticker: str, db: Session = Depends(get_db)):
+    """
+    Повертає активність розробників на GitHub для криптовалютного активу.
+    Для традиційних акцій повертає відповідне повідомлення.
+    """
+    ticker_upper = ticker.upper().strip()
+
+    asset = db.query(Asset).filter(Asset.ticker == ticker_upper).first()
+    if not asset:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Актив '{ticker_upper}' не знайдено."
+        )
+
+    # Блок GitHub лише для криптовалют
+    if asset.asset_type != "crypto":
+        return {
+            "ticker": ticker_upper,
+            "is_crypto": False,
+            "message": "Аналіз активності розробників доступний лише для криптовалютних активів.",
+            "github": []
+        }
+
+    collector = GitHubCollector()
+    stats = collector.get_cached_or_fetch(ticker_upper, asset, db)
+
+    cutoff = datetime.utcnow() - timedelta(hours=24)
+    source = "cache" if stats and stats[0].recorded_at >= cutoff else "live"
+
+    return {
+        "ticker": ticker_upper,
+        "is_crypto": True,
+        "source": source,
+        "count": len(stats),
+        "github": [
+            {
+                "repo_name": s.repo_name,
+                "repo_url": s.repo_url,
+                "stars": s.stars,
+                "forks": s.forks,
+                "open_issues": s.open_issues,
+                "commits_last_month": s.commits_last_month,
+                "activity_level": s.activity_level,
+                "recorded_at": s.recorded_at.isoformat(),
+            }
+            for s in stats
         ]
     }
