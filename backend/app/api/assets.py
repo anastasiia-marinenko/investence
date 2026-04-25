@@ -12,6 +12,7 @@ from app.models.models import Asset, Price
 from app.collectors.news_collector import NewsCollector
 from app.collectors.github_collector import GitHubCollector
 from app.processing.sentiment_analyzer import SentimentAnalyzer
+from app.processing.correlation_engine import CorrelationEngine
 
 router = APIRouter(prefix="/api/assets", tags=["assets"])
 
@@ -323,4 +324,39 @@ def analyze_sentiment(ticker: str, db: Session = Depends(get_db)):
             }
             for n in results
         ]
+    }
+
+@router.get("/{ticker}/correlation")
+def get_correlation(
+    ticker: str,
+    days: int = 14,
+    db: Session = Depends(get_db)
+):
+    """
+    Повертає кореляційний аналіз між тональністю новин та ціновою динамікою.
+    Також зберігає денні оцінки у таблицю daily_scores.
+    """
+    ticker_upper = ticker.upper().strip()
+
+    asset = db.query(Asset).filter(Asset.ticker == ticker_upper).first()
+    if not asset:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Актив '{ticker_upper}' не знайдено."
+        )
+
+    engine = CorrelationEngine()
+
+    # Обчислюємо кореляцію
+    result = engine.calculate(asset, db, days)
+
+    # Зберігаємо денні оцінки
+    engine.save_daily_scores(asset, db, days)
+
+    return {
+        "ticker": ticker_upper,
+        "days_analyzed": result["days_analyzed"],
+        "coefficient": result["coefficient"],
+        "label": result["label"],
+        "chart_data": result["chart_data"],
     }
