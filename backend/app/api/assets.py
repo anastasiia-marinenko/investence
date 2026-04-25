@@ -11,6 +11,7 @@ from app.collectors.price_collector import PriceCollector
 from app.models.models import Asset, Price
 from app.collectors.news_collector import NewsCollector
 from app.collectors.github_collector import GitHubCollector
+from app.processing.sentiment_analyzer import SentimentAnalyzer
 
 router = APIRouter(prefix="/api/assets", tags=["assets"])
 
@@ -253,5 +254,73 @@ def get_github(ticker: str, db: Session = Depends(get_db)):
                 "recorded_at": s.recorded_at.isoformat(),
             }
             for s in stats
+        ]
+    }
+
+@router.post("/{ticker}/analyze-sentiment")
+def analyze_sentiment(ticker: str, db: Session = Depends(get_db)):
+    """
+    Запускає аналіз тональності для всіх непроаналізованих новин активу.
+    Кешує результати у БД -- повторний виклик не витрачає API запити.
+    """
+    ticker_upper = ticker.upper().strip()
+
+    asset = db.query(Asset).filter(Asset.ticker == ticker_upper).first()
+    if not asset:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Актив '{ticker_upper}' не знайдено."
+        )
+
+    # Отримуємо всі непроаналізовані новини
+    from app.models.models import News
+    unanalyzed = db.query(News).filter(
+        News.asset_id == asset.id,
+        News.is_analyzed == False
+    ).all()
+
+    if not unanalyzed:
+        # Повертаємо вже проаналізовані
+        analyzed = db.query(News).filter(
+            News.asset_id == asset.id,
+            News.is_analyzed == True
+        ).all()
+
+        return {
+            "ticker": ticker_upper,
+            "source": "cache",
+            "analyzed_count": len(analyzed),
+            "llm_available": True,
+            "news": [
+                {
+                    "id": n.id,
+                    "title": n.title,
+                    "sentiment_score": n.sentiment_score,
+                    "sentiment_label": n.sentiment_label,
+                }
+                for n in analyzed
+            ]
+        }
+
+    analyzer = SentimentAnalyzer()
+    results = analyzer.analyze_news_batch(unanalyzed, db)
+
+    # Перевіряємо чи LLM взагалі відповів
+    llm_available = any(n.is_analyzed for n in results)
+
+    return {
+        "ticker": ticker_upper,
+        "source": "live",
+        "analyzed_count": sum(1 for n in results if n.is_analyzed),
+        "llm_available": llm_available,
+        "message": None if llm_available else "LLM тимчасово недоступний. Дані відображаються без оцінки тональності.",
+        "news": [
+            {
+                "id": n.id,
+                "title": n.title,
+                "sentiment_score": n.sentiment_score,
+                "sentiment_label": n.sentiment_label,
+            }
+            for n in results
         ]
     }
