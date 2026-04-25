@@ -223,6 +223,7 @@ class PriceCollector:
                     close=p["close"],
                     volume=p["volume"],
                     change_pct=p["change_pct"],
+                    created_at=datetime.utcnow(),
                 )
                 db.add(price)
                 saved.append(price)

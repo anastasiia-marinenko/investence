@@ -14,6 +14,7 @@ from app.collectors.github_collector import GitHubCollector
 from app.processing.sentiment_analyzer import SentimentAnalyzer
 from app.processing.correlation_engine import CorrelationEngine
 from app.processing.summary_generator import SummaryGenerator
+from app.processing.cache_manager import CacheManager
 
 router = APIRouter(prefix="/api/assets", tags=["assets"])
 
@@ -92,40 +93,30 @@ def get_prices(
             detail=f"Актив '{ticker_upper}' не знайдено. Спочатку валідуйте тікер."
         )
 
-    # Перевіряємо кеш -- якщо дані свіжі (менше 24 годин) повертаємо з БД
-    from datetime import datetime, timedelta
+    cache = CacheManager(db)
 
-    # Перевіряємо чи є хоч якісь дані у БД для цього активу
-    existing_prices = db.query(Price).filter(
-        Price.asset_id == asset.id
-    ).order_by(Price.created_at.desc()).all()
+    # Перевіряємо кеш
+    cached_prices = cache.get_cached_prices(asset, days)
+    if cached_prices is not None:
+        return {
+            "ticker": ticker_upper,
+            "source": "cache",
+            "count": len(cached_prices),
+            "prices": [
+                {
+                    "date": p.date.strftime("%Y-%m-%d"),
+                    "open": p.open,
+                    "high": p.high,
+                    "low": p.low,
+                    "close": p.close,
+                    "volume": p.volume,
+                    "change_pct": p.change_pct,
+                }
+                for p in cached_prices
+            ]
+        }
 
-    # Кеш актуальний якщо: є дані І останній запис оновлено менше 24 годин тому
-    if existing_prices:
-        latest_record = existing_prices[0]
-        cache_age = datetime.utcnow() - latest_record.created_at
-        is_fresh = cache_age < timedelta(hours=24)
-
-        if is_fresh and len(existing_prices) >= days - 7:
-            return {
-                "ticker": ticker_upper,
-                "source": "cache",
-                "count": len(existing_prices),
-                "prices": [
-                    {
-                        "date": p.date.strftime("%Y-%m-%d"),
-                        "open": p.open,
-                        "high": p.high,
-                        "low": p.low,
-                        "close": p.close,
-                        "volume": p.volume,
-                        "change_pct": p.change_pct,
-                    }
-                    for p in sorted(existing_prices, key=lambda x: x.date)
-                ]
-            }
-
-    # Збираємо свіжі дані
+    # Кеш промах -- збираємо свіжі дані
     collector = PriceCollector()
     prices = collector.collect_and_save(ticker_upper, asset, db, days)
 
@@ -157,7 +148,7 @@ def get_prices(
 def get_news(ticker: str, refresh: bool = False, db: Session = Depends(get_db)):
     """
     Повертає новини для активу.
-    Використовує кеш якщо дані свіжі (менше 24 годин).
+    Використовує CacheManager для перевірки кешу.
     """
     ticker_upper = ticker.upper().strip()
 
@@ -168,13 +159,41 @@ def get_news(ticker: str, refresh: bool = False, db: Session = Depends(get_db)):
             detail=f"Актив '{ticker_upper}' не знайдено."
         )
 
-    collector = NewsCollector()
+    cache = CacheManager(db)
 
+    # Примусова інвалідація якщо refresh=True
     if refresh:
-        # Примусово збираємо нові дані ігноруючи кеш
-        news = collector.collect_and_save(ticker_upper, asset, db)
-    else:
-        news = collector.get_cached_or_fetch(ticker_upper, asset, db)
+        cache.invalidate_asset_cache(asset)
+
+    # Перевіряємо кеш
+    cached_news = cache.get_cached_news(asset)
+    if cached_news is not None:
+        return {
+            "ticker": ticker_upper,
+            "source": "cache",
+            "count": len(cached_news),
+            "news": [
+                {
+                    "id": n.id,
+                    "title": n.title,
+                    "source": n.source,
+                    "url": n.url,
+                    "published_at": n.published_at.isoformat() if n.published_at else None,
+                    "sentiment_score": n.sentiment_score,
+                    "sentiment_label": n.sentiment_label,
+                    "is_analyzed": n.is_analyzed,
+                }
+                for n in sorted(
+                    cached_news,
+                    key=lambda n: n.published_at or datetime.min,
+                    reverse=True
+                )
+            ]
+        }
+
+    # Кеш промах -- збираємо свіжі дані
+    collector = NewsCollector()
+    news = collector.collect_and_save(ticker_upper, asset, db)
 
     if not news:
         return {
@@ -185,14 +204,9 @@ def get_news(ticker: str, refresh: bool = False, db: Session = Depends(get_db)):
             "message": "Новини за обраним активом не знайдено."
         }
 
-    # Визначаємо джерело відповіді
-    from datetime import datetime, timedelta
-    cutoff = datetime.utcnow() - timedelta(hours=24)
-    source = "cache" if news[0].created_at >= cutoff else "live"
-
     return {
         "ticker": ticker_upper,
-        "source": source,
+        "source": "live",
         "count": len(news),
         "news": [
             {
@@ -205,7 +219,11 @@ def get_news(ticker: str, refresh: bool = False, db: Session = Depends(get_db)):
                 "sentiment_label": n.sentiment_label,
                 "is_analyzed": n.is_analyzed,
             }
-            for n in news
+            for n in sorted(
+                news,
+                key=lambda n: n.published_at or datetime.min,
+                reverse=True
+            )
         ]
     }
 
@@ -214,6 +232,7 @@ def get_github(ticker: str, db: Session = Depends(get_db)):
     """
     Повертає активність розробників на GitHub для криптовалютного активу.
     Для традиційних акцій повертає відповідне повідомлення.
+    Використовує CacheManager для перевірки кешу.
     """
     ticker_upper = ticker.upper().strip()
 
@@ -224,7 +243,11 @@ def get_github(ticker: str, db: Session = Depends(get_db)):
             detail=f"Актив '{ticker_upper}' не знайдено."
         )
 
-    # Блок GitHub лише для криптовалют
+    cache = CacheManager(db)
+
+    # CacheManager повертає [] для акцій автоматично (НФВ-17)
+    cached_github = cache.get_cached_github(asset)
+
     if asset.asset_type != "crypto":
         return {
             "ticker": ticker_upper,
@@ -233,16 +256,35 @@ def get_github(ticker: str, db: Session = Depends(get_db)):
             "github": []
         }
 
-    collector = GitHubCollector()
-    stats = collector.get_cached_or_fetch(ticker_upper, asset, db)
+    if cached_github is not None:
+        return {
+            "ticker": ticker_upper,
+            "is_crypto": True,
+            "source": "cache",
+            "count": len(cached_github),
+            "github": [
+                {
+                    "repo_name": s.repo_name,
+                    "repo_url": s.repo_url,
+                    "stars": s.stars,
+                    "forks": s.forks,
+                    "open_issues": s.open_issues,
+                    "commits_last_month": s.commits_last_month,
+                    "activity_level": s.activity_level,
+                    "recorded_at": s.recorded_at.isoformat(),
+                }
+                for s in cached_github
+            ]
+        }
 
-    cutoff = datetime.utcnow() - timedelta(hours=24)
-    source = "cache" if stats and stats[0].recorded_at >= cutoff else "live"
+    # Кеш промах -- збираємо свіжі дані
+    collector = GitHubCollector()
+    stats = collector.collect_and_save(ticker_upper, asset, db)
 
     return {
         "ticker": ticker_upper,
         "is_crypto": True,
-        "source": source,
+        "source": "live",
         "count": len(stats),
         "github": [
             {
@@ -385,4 +427,46 @@ def get_summary(ticker: str, db: Session = Depends(get_db)):
         "ticker": ticker_upper,
         "name": asset.name,
         **result
+    }
+
+@router.get("/{ticker}/cache-status")
+def get_cache_status(ticker: str, db: Session = Depends(get_db)):
+    """
+    Повертає статус кешу для активу.
+    Показує час останнього оновлення кожного типу даних.
+    """
+    ticker_upper = ticker.upper().strip()
+
+    asset = db.query(Asset).filter(Asset.ticker == ticker_upper).first()
+    if not asset:
+        raise HTTPException(status_code=404, detail=f"Актив '{ticker_upper}' не знайдено.")
+
+    cache = CacheManager(db)
+    status = cache.get_cache_status(asset)
+
+    return {
+        "ticker": ticker_upper,
+        "cache_ttl_hours": 24,
+        "status": status,
+    }
+
+
+@router.post("/{ticker}/invalidate-cache")
+def invalidate_cache(ticker: str, db: Session = Depends(get_db)):
+    """
+    Примусово інвалідує кеш для активу.
+    Використовується кнопкою «Оновити дані» на дашборді.
+    """
+    ticker_upper = ticker.upper().strip()
+
+    asset = db.query(Asset).filter(Asset.ticker == ticker_upper).first()
+    if not asset:
+        raise HTTPException(status_code=404, detail=f"Актив '{ticker_upper}' не знайдено.")
+
+    cache = CacheManager(db)
+    cache.invalidate_asset_cache(asset)
+
+    return {
+        "ticker": ticker_upper,
+        "message": "Кеш інвалідовано. Наступний запит отримає свіжі дані.",
     }
