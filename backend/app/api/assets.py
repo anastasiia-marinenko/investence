@@ -245,7 +245,7 @@ def get_github(ticker: str, db: Session = Depends(get_db)):
 
     cache = CacheManager(db)
 
-    # CacheManager повертає [] для акцій автоматично (НФВ-17)
+    # CacheManager повертає [] для акцій автоматично
     cached_github = cache.get_cached_github(asset)
 
     if asset.asset_type != "crypto":
