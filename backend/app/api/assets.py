@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from app.models.database import get_db
 from app.collectors.asset_search import validate_and_save_asset
 from app.collectors.price_collector import PriceCollector
-from app.models.models import Asset, Price
+from app.models.models import Asset, News, Price, GitHubStats, DailyScore
 from app.collectors.news_collector import NewsCollector
 from app.collectors.github_collector import GitHubCollector
 from app.processing.sentiment_analyzer import SentimentAnalyzer
@@ -469,4 +469,266 @@ def invalidate_cache(ticker: str, db: Session = Depends(get_db)):
     return {
         "ticker": ticker_upper,
         "message": "Кеш інвалідовано. Наступний запит отримає свіжі дані.",
+    }
+
+@router.get("/{ticker}")
+def get_dashboard(
+    ticker: str,
+    days: int = 30,
+    refresh: bool = False,
+    db: Session = Depends(get_db)
+):
+    """
+    Повертає всі дані для дашборду активу одним запитом.
+    Агрегує: інформацію про актив, ціни, новини, GitHub,
+    кореляцію та AI-звіт.
+
+    Args:
+        ticker: тікер-символ активу (наприклад AAPL або BTC-USD)
+        days: кількість днів для цінових даних (за замовчуванням 30)
+        refresh: примусове оновлення кешу (за замовчуванням False)
+    """
+    ticker_upper = ticker.upper().strip()
+
+    # Валідація допустимих символів
+    allowed = set("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.")
+    if not all(c in allowed for c in ticker_upper):
+        raise HTTPException(
+            status_code=400,
+            detail="Тікер-символ містить неприпустимі символи."
+        )
+
+    # Перевіряємо чи актив існує
+    asset = db.query(Asset).filter(Asset.ticker == ticker_upper).first()
+    if not asset:
+        # Спробуємо валідувати та зберегти
+        from app.collectors.asset_search import validate_and_save_asset
+        asset = validate_and_save_asset(ticker_upper, db)
+
+    if not asset:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Актив '{ticker_upper}' не знайдено. Перевірте правильність символу."
+        )
+
+    cache = CacheManager(db)
+
+    # Примусова інвалідація кешу якщо refresh=True
+    if refresh:
+        cache.invalidate_asset_cache(asset)
+
+    # ── Збираємо всі дані паралельно ─────────────────────────────────────────
+
+    # 1. Цінові дані
+    cached_prices = cache.get_cached_prices(asset, days)
+    if cached_prices is not None:
+        prices_source = "cache"
+        prices_data = cached_prices
+    else:
+        from app.collectors.price_collector import PriceCollector
+        collector = PriceCollector()
+        prices_data = collector.collect_and_save(ticker_upper, asset, db, days)
+        prices_source = "live"
+
+    # 2. Новини
+    cached_news = cache.get_cached_news(asset)
+    if cached_news is not None:
+        news_source = "cache"
+        news_data = cached_news
+    else:
+        from app.collectors.news_collector import NewsCollector
+        news_collector = NewsCollector()
+        news_data = news_collector.collect_and_save(ticker_upper, asset, db)
+        news_source = "live"
+
+    # 3. Аналіз тональності
+    if news_data:
+        unanalyzed = [n for n in news_data if not n.is_analyzed]
+        if unanalyzed:
+            from app.processing.sentiment_analyzer import SentimentAnalyzer
+            analyzer = SentimentAnalyzer()
+            analyzer.analyze_news_batch(unanalyzed, db)
+            # Оновлюємо список новин після аналізу
+            news_data = cache.get_cached_news(asset) or news_data
+
+    # 4. GitHub (лише для крипто)
+    github_data = []
+    if asset.asset_type == "crypto":
+        cached_github = cache.get_cached_github(asset)
+        if cached_github is not None:
+            github_data = cached_github
+        else:
+            from app.collectors.github_collector import GitHubCollector
+            github_collector = GitHubCollector()
+            github_data = github_collector.collect_and_save(ticker_upper, asset, db)
+
+    # 5. Кореляційний аналіз
+    from app.processing.correlation_engine import CorrelationEngine
+    correlation_engine = CorrelationEngine()
+    correlation = correlation_engine.calculate(asset, db, days=14)
+    correlation_engine.save_daily_scores(asset, db, days=14)
+
+    # 6. AI-звіт
+    cached_summary = cache.get_cached_summary(asset)
+    if cached_summary:
+        summary_result = {
+            "summary": cached_summary,
+            "disclaimer": "Цей звіт сформований автоматично і не є фінансовою порадою.",
+            "source": "cache",
+            "llm_available": True,
+        }
+    else:
+        from app.processing.summary_generator import SummaryGenerator
+        generator = SummaryGenerator()
+        summary_result = generator.generate(asset, db)
+
+    # 7. Статус кешу
+    cache_status = cache.get_cache_status(asset)
+
+    # ── Формуємо відповідь ────────────────────────────────────────────────────
+
+    # Розраховуємо поточну ціну та зміну за день
+    current_price = None
+    daily_change = None
+    if prices_data:
+        sorted_prices = sorted(prices_data, key=lambda p: p.date, reverse=True)
+        current_price = sorted_prices[0].close
+        daily_change = sorted_prices[0].change_pct
+
+    # Розраховуємо середній sentiment
+    analyzed_news = [n for n in news_data if n.is_analyzed and n.sentiment_score is not None]
+    avg_sentiment = None
+    sentiment_label = None
+    if analyzed_news:
+        avg_sentiment = round(
+            sum(n.sentiment_score for n in analyzed_news) / len(analyzed_news), 4
+        )
+        if avg_sentiment > 0.2:
+            sentiment_label = "positive"
+        elif avg_sentiment < -0.2:
+            sentiment_label = "negative"
+        else:
+            sentiment_label = "neutral"
+
+    return {
+        "ticker": ticker_upper,
+        "name": asset.name,
+        "asset_type": asset.asset_type,
+        "exchange": asset.exchange,
+        "currency": asset.currency or "USD",
+        "is_crypto": asset.asset_type == "crypto",
+        "current_price": current_price,
+        "daily_change": daily_change,
+        "updated_at": datetime.utcnow().isoformat(),
+        "prices": {
+            "source": prices_source,
+            "count": len(prices_data),
+            "data": [
+                {
+                    "date": p.date.strftime("%Y-%m-%d"),
+                    "open": p.open,
+                    "high": p.high,
+                    "low": p.low,
+                    "close": p.close,
+                    "volume": p.volume,
+                    "change_pct": p.change_pct,
+                }
+                for p in sorted(prices_data, key=lambda p: p.date)
+            ]
+        },
+        "news": {
+            "source": news_source,
+            "count": len(news_data),
+            "avg_sentiment": avg_sentiment,
+            "sentiment_label": sentiment_label,
+            "data": [
+                {
+                    "id": n.id,
+                    "title": n.title,
+                    "source": n.source,
+                    "url": n.url,
+                    "published_at": n.published_at.isoformat() if n.published_at else None,
+                    "sentiment_score": n.sentiment_score,
+                    "sentiment_label": n.sentiment_label,
+                    "is_analyzed": n.is_analyzed,
+                }
+                for n in sorted(
+                    news_data,
+                    key=lambda n: n.published_at or datetime.min,
+                    reverse=True
+                )
+            ]
+        },
+        "github": {
+            "available": asset.asset_type == "crypto",
+            "count": len(github_data),
+            "data": [
+                {
+                    "repo_name": g.repo_name,
+                    "repo_url": g.repo_url,
+                    "stars": g.stars,
+                    "forks": g.forks,
+                    "open_issues": g.open_issues,
+                    "commits_last_month": g.commits_last_month,
+                    "activity_level": g.activity_level,
+                }
+                for g in github_data
+            ]
+        },
+        "correlation": correlation,
+        "summary": summary_result,
+        "cache_status": cache_status,
+    }
+
+@router.get("")
+def get_history(db: Session = Depends(get_db)):
+    """
+    Повертає список всіх раніше проаналізованих активів.
+    Використовується сторінкою /history фронтенду.
+    """
+    from sqlalchemy import func
+
+    assets = db.query(Asset).order_by(Asset.updated_at.desc()).all()
+
+    if not assets:
+        return {
+            "count": 0,
+            "assets": [],
+            "message": "Ви ще не аналізували жодного активу. "
+                       "Почніть пошук на головній сторінці."
+        }
+
+    result = []
+    for asset in assets:
+        avg_sentiment = db.query(
+            func.avg(News.sentiment_score)
+        ).filter(
+            News.asset_id == asset.id,
+            News.is_analyzed == True,
+            News.sentiment_score.isnot(None)
+        ).scalar()
+
+        if avg_sentiment is not None:
+            avg_sentiment = round(float(avg_sentiment), 4)
+            if avg_sentiment > 0.2:
+                sentiment_label = "positive"
+            elif avg_sentiment < -0.2:
+                sentiment_label = "negative"
+            else:
+                sentiment_label = "neutral"
+        else:
+            sentiment_label = None
+
+        result.append({
+            "ticker": asset.ticker,
+            "name": asset.name,
+            "asset_type": asset.asset_type,
+            "sentiment_score": avg_sentiment,
+            "sentiment_label": sentiment_label,
+            "last_analyzed": asset.updated_at.isoformat() if asset.updated_at else None,
+        })
+
+    return {
+        "count": len(result),
+        "assets": result,
     }
