@@ -34,5 +34,17 @@ services:
       postgres:
         condition: service_healthy
 
+  # Nginx + React фронтенд
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: investence-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+
 volumes:
   postgres_data:
