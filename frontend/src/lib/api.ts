@@ -1,10 +1,10 @@
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const BASE = "/api";
 
-export async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}/api${path}`);
+export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, options);
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error((err as { error: string }).error || `HTTP ${res.status}`);
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error((err as { detail: string }).detail || `HTTP ${res.status}`);
   }
   return res.json();
 }
@@ -12,53 +12,54 @@ export async function apiFetch<T>(path: string): Promise<T> {
 export interface DashboardData {
   ticker: string;
   name: string;
-  isCrypto: boolean;
-  currentPrice: number | null;
-  dailyChange: number | null;
+  is_crypto: boolean;
+  current_price: number | null;
+  daily_change: number | null;
   currency: string;
-  updatedAt: string;
-  prices: { date: string; close: number }[];
+  updated_at: string;
+  prices: {
+    data: { date: string; close: number; change_pct: number }[];
+    count: number;
+  };
   news: {
-    title: string;
-    url: string;
-    source: string;
-    date: string;
-    sentimentLabel: "positive" | "negative" | "neutral";
-    sentimentScore: number;
-  }[];
-  sentiment: { avgScore: number; label: string; newsCount: number };
+    data: {
+      id: number;
+      title: string;
+      url: string;
+      source: string;
+      published_at: string;
+      sentiment_score: number;
+      sentiment_label: "positive" | "negative" | "neutral";
+    }[];
+    avg_sentiment: number;
+    sentiment_label: string;
+    count: number;
+  };
   correlation: {
     coefficient: number | null;
     label: string;
-    chartData: { date: string; priceChange: number; sentiment: number }[];
+    chart_data: { date: string; price_change: number; sentiment: number }[];
   };
   github: {
-    name: string;
-    fullName: string;
-    stars: number;
-    forks: number;
-    openIssues: number;
-    url: string;
-    activity: "high" | "medium" | "low";
-  }[];
-  aiReport: string;
-  noNewsApiKey: boolean;
+    data: {
+      full_name: string;
+      stars: number;
+      forks: number;
+      open_issues: number;
+      url: string;
+      activity: "high" | "medium" | "low";
+    }[];
+    available: boolean;
+  };
+  summary: { summary: string; disclaimer: string } | null;
 }
 
 export interface AssetInfo {
   ticker: string;
   name: string;
-  isCrypto: boolean;
-  currentPrice: number | null;
-  dailyChange: number | null;
-  marketCapFormatted: string;
-  peRatio: number | null;
-  weekHigh52: number | null;
-  weekLow52: number | null;
-  volumeFormatted: string;
-  description: string | null;
-  sector: string | null;
+  asset_type: string;
   exchange: string | null;
+  sector: string | null;
   currency: string;
 }
 
@@ -66,21 +67,26 @@ export interface HistoryItem {
   id: number;
   ticker: string;
   name: string;
-  isCrypto: boolean;
-  sentimentScore: number | null;
-  sentimentLabel: string | null;
-  lastAnalyzedAt: string;
+  asset_type: string;
+  avg_sentiment: number | null;
+  sentiment_label: string | null;
+  updated_at: string;
+}
+
+export interface TopResponse {
+  category: string;
+  count: number;
+  assets: TopItem[];
 }
 
 export interface TopItem {
   ticker: string;
   name: string;
-  isCrypto: boolean;
-  currentPrice: number | null;
-  dailyChange: number | null;
-  sentimentScore: number | null;
-  sentimentLabel: string | null;
-  lastAnalyzedAt: string;
+  asset_type: string;
+  current_price: number | null;
+  daily_change: number | null;
+  sentiment_score: number | null;
+  sentiment_label: string | null;
 }
 
 export interface NewsItem {
@@ -89,41 +95,23 @@ export interface NewsItem {
   title: string;
   url: string;
   source: string;
-  date: string;
-  sentimentLabel: "positive" | "negative" | "neutral";
-  sentimentScore: number;
-  category: string;
+  published_at: string;
+  sentiment_label: "positive" | "negative" | "neutral";
+  sentiment_score: number;
 }
 
 export interface AnalyticsData {
-  totalAssets: number;
-  totalNews: number;
-  avgSentiment: number;
-  avgDailyPriceChange: number | null;
-  totalMonthlyCommits: number;
-  sentimentDist: { positive: number; negative: number; neutral: number };
-  dailyActivity: { date: string; count: number }[];
-  priceDailyActivity: { date: string; avgChange: number }[];
-  githubDailyActivity: { date: string; commits: number }[];
+  total_assets: number;
+  total_news: number;
+  avg_sentiment: number;
+  avg_daily_price_change: number | null;
+  total_monthly_commits: number;
+  sentiment_dist: { positive: number; negative: number; neutral: number };
+  daily_activity: { date: string; count: number }[];
   top5: {
     ticker: string;
     name: string;
-    sentimentScore: number | null;
-    sentimentLabel: string | null;
-    isCrypto: boolean;
-  }[];
-  top5ByPrice: {
-    ticker: string;
-    name: string;
-    currentPrice: number | null;
-    dailyChange: number | null;
-    change30d: number | null;
-  }[];
-  top5ByGithub: {
-    ticker: string;
-    name: string;
-    stars: number;
-    monthlyCommits: number;
-    activity: string;
+    avg_sentiment: number | null;
+    sentiment_label: string | null;
   }[];
 }
