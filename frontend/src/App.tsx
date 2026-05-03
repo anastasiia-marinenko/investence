@@ -10,6 +10,7 @@ import Compare from "@/pages/compare";
 import Top from "@/pages/top";
 import News from "@/pages/news";
 import Analytics from "@/pages/analytics";
+import AssetInfo from "@/pages/asset-info";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/top" component={Top} />
       <Route path="/news" component={News} />
       <Route path="/analytics" component={Analytics} />
+      <Route path="/asset/:ticker/info" component={AssetInfo} />
     </Switch>
   );
 }

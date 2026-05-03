@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import datetime, timedelta
+from app.config import settings
 from app.models.database import get_db
 from app.collectors.asset_search import validate_and_save_asset
 from app.collectors.price_collector import PriceCollector
@@ -469,6 +470,318 @@ def invalidate_cache(ticker: str, db: Session = Depends(get_db)):
     return {
         "ticker": ticker_upper,
         "message": "Кеш інвалідовано. Наступний запит отримає свіжі дані.",
+    }
+
+@router.get("/{ticker}/info")
+def get_asset_info(ticker: str, db: Session = Depends(get_db)):
+    import yfinance as yf
+    import requests
+    import logging
+    _logger = logging.getLogger(__name__)
+
+    ticker_upper = ticker.upper().strip()
+
+    asset = db.query(Asset).filter(Asset.ticker == ticker_upper).first()
+    if not asset:
+        raise HTTPException(status_code=404, detail=f"Актив '{ticker_upper}' не знайдено.")
+
+    def fmt_large(n):
+        if not n: return None
+        if n >= 1e12: return f"${n / 1e12:.2f}T"
+        if n >= 1e9:  return f"${n / 1e9:.2f}B"
+        if n >= 1e6:  return f"${n / 1e6:.2f}M"
+        return f"${n:,.0f}"
+
+    def fmt_volume(v):
+        if not v: return None
+        if v >= 1e9: return f"{v / 1e9:.1f}B"
+        if v >= 1e6: return f"{v / 1e6:.1f}M"
+        return f"{v:,.0f}"
+
+    # ── Базові дані з БД ───────────────────────────────────────────────────
+    prices = db.query(Price).filter(
+        Price.asset_id == asset.id
+    ).order_by(Price.date.desc()).limit(365).all()
+
+    current_price = None
+    daily_change  = None
+    week_high_52  = None
+    week_low_52   = None
+    volume_db     = None
+
+    if prices:
+        latest        = prices[0]
+        current_price = latest.close
+        daily_change  = latest.change_pct
+        closes        = [p.close for p in prices if p.close]
+        week_high_52  = max(closes) if closes else None
+        week_low_52   = min(closes) if closes else None
+        volume_db     = latest.volume
+
+    cache        = CacheManager(db)
+    description  = cache.get_cached_summary(asset)
+    pe_ratio     = None
+    market_cap   = None
+    sector       = asset.sector
+
+    # ── Перевіряємо кеш в Asset ────────────────────────────────────────────
+    INFO_TTL_HOURS = 24
+    info_cached_at = getattr(asset, "info_cached_at", None)
+    cache_is_fresh = (
+        info_cached_at is not None
+        and (datetime.utcnow() - info_cached_at).total_seconds() < INFO_TTL_HOURS * 3600
+    )
+
+    if cache_is_fresh:
+        market_cap = getattr(asset, "market_cap", None)
+        pe_ratio   = getattr(asset, "pe_ratio", None)
+        sector     = getattr(asset, "sector_cached", None) or asset.sector
+        _logger.info(f"Asset info served from DB cache for {ticker_upper}")
+
+    else:
+        # ── Джерело 1: yfinance ────────────────────────────────────────────
+        info_loaded = False
+        try:
+            yf_ticker = yf.Ticker(ticker_upper)
+            info = yf_ticker.info or {}
+
+            if info and info.get("regularMarketPrice"):  # перевірка що відповідь не порожня
+                raw_cap = info.get("marketCap")
+                if not raw_cap and info.get("circulatingSupply") and info.get("regularMarketPrice"):
+                    raw_cap = info["circulatingSupply"] * info["regularMarketPrice"]
+                if raw_cap:
+                    market_cap = fmt_large(raw_cap)
+
+                if info.get("trailingPE"):
+                    pe_ratio = round(info["trailingPE"], 2)
+
+                sector = (
+                    info.get("sector")
+                    or info.get("category")
+                    or info.get("quoteType")
+                    or asset.sector
+                )
+                current_price = info.get("currentPrice") or info.get("regularMarketPrice") or current_price
+                if info.get("regularMarketChangePercent"):
+                    daily_change = info["regularMarketChangePercent"]
+                vol = info.get("volume24Hr") or info.get("volume") or info.get("regularMarketVolume")
+                if vol:
+                    volume_db = vol
+                if info.get("fiftyTwoWeekHigh"):
+                    week_high_52 = info["fiftyTwoWeekHigh"]
+                if info.get("fiftyTwoWeekLow"):
+                    week_low_52 = info["fiftyTwoWeekLow"]
+                if info.get("longBusinessSummary"):
+                    description = info["longBusinessSummary"]
+
+                info_loaded = True
+                _logger.info(f"yfinance info loaded for {ticker_upper}")
+
+        except Exception as e:
+            _logger.warning(f"yfinance failed for {ticker_upper}: {e}")
+
+        # ── Джерело 2: Alpha Vantage (fallback якщо yfinance не дав даних) ─
+        if not info_loaded:
+            try:
+                av_key = getattr(settings, "ALPHA_VANTAGE_API_KEY", None)
+                if av_key:
+                    # OVERVIEW endpoint повертає market_cap, PE, sector тощо
+                    url = "https://www.alphavantage.co/query"
+                    params = {
+                        "function": "OVERVIEW",
+                        "symbol": ticker_upper,
+                        "apikey": av_key,
+                    }
+                    resp = requests.get(url, params=params, timeout=10)
+                    if resp.status_code == 200:
+                        av = resp.json()
+                        if av.get("Symbol"):  # перевірка що відповідь не порожня
+                            raw_cap = av.get("MarketCapitalization")
+                            if raw_cap and raw_cap != "None":
+                                market_cap = fmt_large(float(raw_cap))
+
+                            pe_raw = av.get("PERatio")
+                            if pe_raw and pe_raw != "None":
+                                pe_ratio = round(float(pe_raw), 2)
+
+                            sector = av.get("Sector") or av.get("AssetType") or sector
+
+                            high_52 = av.get("52WeekHigh")
+                            low_52  = av.get("52WeekLow")
+                            if high_52 and high_52 != "None":
+                                week_high_52 = float(high_52)
+                            if low_52 and low_52 != "None":
+                                week_low_52 = float(low_52)
+
+                            desc = av.get("Description")
+                            if desc and desc != "None":
+                                description = desc
+
+                            info_loaded = True
+                            _logger.info(f"Alpha Vantage OVERVIEW loaded for {ticker_upper}")
+
+            except Exception as e:
+                _logger.warning(f"Alpha Vantage failed for {ticker_upper}: {e}")
+
+       # ── Джерело 3: CoinGecko (fallback для крипто) ─────────────────────────
+        if not info_loaded and asset.asset_type == "crypto":
+            try:
+                COINGECKO_IDS = {
+                    "BTC-USD": "bitcoin",
+                    "ETH-USD": "ethereum",
+                    "SOL-USD": "solana",
+                    "BNB-USD": "binancecoin",
+                    "XRP-USD": "ripple",
+                    "ADA-USD": "cardano",
+                    "DOGE-USD": "dogecoin",
+                    "DOT-USD": "polkadot",
+                    "MATIC-USD": "matic-network",
+                    "LTC-USD": "litecoin",
+                    "AVAX-USD": "avalanche-2",
+                    "LINK-USD": "chainlink",
+                    "UNI-USD": "uniswap",
+                    "ATOM-USD": "cosmos",
+                    "TRX-USD": "tron",
+                }
+
+                coin_id = COINGECKO_IDS.get(ticker_upper)
+                if not coin_id:
+                    coin_id = ticker_upper.replace("-USD", "").replace("-USDT", "").lower()
+
+                url = f"https://api.coingecko.com/api/v3/coins/{coin_id}"
+                params = {
+                    "localization": "false",
+                    "tickers": "false",
+                    "community_data": "false",
+                    "developer_data": "false",
+                    "sparkline": "false",
+                }
+                resp = requests.get(url, params=params, timeout=10)
+
+                if resp.status_code == 200:
+                    cg = resp.json()
+                    mkt = cg.get("market_data", {})
+
+                    # ── ціна ──────────────────────────────────────────────────
+                    cg_price = mkt.get("current_price", {}).get("usd")
+                    if cg_price:
+                        current_price = cg_price
+
+                    # ── зміна за день (CoinGecko повертає у відсотках, напр. 0.37) ──
+                    cg_change = mkt.get("price_change_percentage_24h")
+                    if cg_change is not None:
+                        daily_change = round(cg_change, 4)
+
+                    # ── market_cap ────────────────────────────────────────────
+                    raw_cap = mkt.get("market_cap", {}).get("usd")
+                    if raw_cap:
+                        market_cap = fmt_large(raw_cap)
+
+                    # ── volume ────────────────────────────────────────────────
+                    cg_vol = mkt.get("total_volume", {}).get("usd")
+                    if cg_vol:
+                        volume_db = cg_vol
+
+                    # ── week_high_52 / week_low_52 ────────────────────────────
+                    # CoinGecko не має точного поля "52-week high/low"
+                    # Використовуємо ath якщо він був протягом останнього року,
+                    # інакше рахуємо через price_change_percentage_1y
+                    ath = mkt.get("ath", {}).get("usd")
+                    atl = mkt.get("atl", {}).get("usd")
+                    ath_date_str = mkt.get("ath_date", {}).get("usd", "")
+                    change_1y = mkt.get("price_change_percentage_1y")
+
+                    # Перевіряємо чи ATH був протягом останніх 365 днів
+                    ath_within_year = False
+                    if ath_date_str:
+                        try:
+                            ath_date = datetime.fromisoformat(
+                                ath_date_str.replace("Z", "+00:00")
+                            ).replace(tzinfo=None)
+                            ath_within_year = (datetime.utcnow() - ath_date).days <= 365
+                        except Exception:
+                            pass
+
+                    if cg_price and change_1y is not None:
+                        # ціна рік тому
+                        price_1y_ago = cg_price / (1 + change_1y / 100)
+
+                        # high: ATH якщо він був цього року, інакше max(ціна зараз, рік тому)
+                        if ath and ath_within_year:
+                            week_high_52 = ath
+                        else:
+                            week_high_52 = round(max(cg_price, price_1y_ago), 2)
+
+                        # low: min(ціна зараз, рік тому)
+                        # ATL для BTC це $67 з 2013 — не підходить для 52-week low
+                        week_low_52 = round(min(cg_price, price_1y_ago), 2)
+
+                    # ── sector ────────────────────────────────────────────────
+                    categories = cg.get("categories", [])
+                    if categories:
+                        # Пріоритет відповідає реальним категоріям CoinGecko
+                        priority = [
+                            "Bitcoin Ecosystem",
+                            "Ethereum Ecosystem",
+                            "Proof of Work (PoW)",
+                            "Proof of Stake (PoS)",
+                            "Layer 1 (L1)",
+                            "Layer 2 (L2)",
+                            "DeFi",
+                            "Stablecoin",
+                            "Smart Contract Platform",
+                        ]
+                        sector = next(
+                            (c for c in priority if c in categories),
+                            categories[0]
+                        )
+
+                    # ── опис ──────────────────────────────────────────────────
+                    desc = cg.get("description", {}).get("en", "")
+                    if desc and not description:
+                        description = desc[:500].rsplit(" ", 1)[0] + "..."
+
+                    info_loaded = True
+                    _logger.info(f"CoinGecko data loaded for {ticker_upper} (coin_id={coin_id})")
+
+                elif resp.status_code == 404:
+                    _logger.warning(f"CoinGecko: coin_id '{coin_id}' not found for {ticker_upper}")
+                elif resp.status_code == 429:
+                    _logger.warning(f"CoinGecko rate limit for {ticker_upper}")
+                else:
+                    _logger.warning(f"CoinGecko returned {resp.status_code} for {coin_id}")
+
+            except Exception as e:
+                _logger.warning(f"CoinGecko failed for {ticker_upper}: {e}")
+       
+        # ── Зберігаємо в кеш якщо хоч щось отримали ──────────────────────
+        if info_loaded:
+            try:
+                asset.market_cap     = market_cap
+                asset.pe_ratio       = pe_ratio
+                asset.sector_cached  = sector
+                asset.info_cached_at = datetime.utcnow()
+                db.commit()
+            except Exception as e:
+                _logger.warning(f"Failed to cache asset info: {e}")
+                db.rollback()
+
+    return {
+        "ticker":        ticker_upper,
+        "name":          asset.name,
+        "asset_type":    asset.asset_type,
+        "exchange":      asset.exchange,
+        "currency":      asset.currency or "USD",
+        "is_crypto":     asset.asset_type == "crypto",
+        "current_price": current_price,
+        "daily_change":  daily_change,
+        "market_cap":    market_cap,
+        "volume":        fmt_volume(volume_db),
+        "pe_ratio":      pe_ratio,
+        "week_high_52":  week_high_52,
+        "week_low_52":   week_low_52,
+        "sector":        sector,
+        "description":   description,
     }
 
 @router.get("/{ticker}")
