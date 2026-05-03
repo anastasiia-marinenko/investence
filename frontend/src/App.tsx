@@ -8,6 +8,7 @@ import Home from "@/pages/home";
 import Dashboard from "@/pages/dashboard";
 import Compare from "@/pages/compare";
 import Top from "@/pages/top";
+import News from "@/pages/news";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/dashboard/:ticker" component={Dashboard} />
       <Route path="/compare" component={Compare} />
       <Route path="/top" component={Top} />
+      <Route path="/news" component={News} />
     </Switch>
   );
 }
