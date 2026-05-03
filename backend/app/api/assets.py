@@ -3,6 +3,7 @@ API ендпоінти для роботи з активами.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from app.config import settings
@@ -1001,7 +1002,7 @@ def get_history(db: Session = Depends(get_db)):
     """
     from sqlalchemy import func
 
-    assets = db.query(Asset).order_by(Asset.updated_at.desc()).all()
+    assets = db.query(Asset).filter(or_(Asset.is_hidden == False, Asset.is_hidden == None)).order_by(Asset.updated_at.desc()).all()
 
     if not assets:
         return {
@@ -1045,3 +1046,10 @@ def get_history(db: Session = Depends(get_db)):
         "count": len(result),
         "assets": result,
     }
+
+# clear_history — просто ховає
+@router.delete("")
+def clear_history(db: Session = Depends(get_db)):
+    db.query(Asset).update({"is_hidden": True})
+    db.commit()
+    return {"message": "Історію очищено"}

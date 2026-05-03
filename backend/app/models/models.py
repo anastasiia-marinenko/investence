@@ -23,6 +23,7 @@ class Asset(Base):
     currency = Column(String(10), nullable=True, default="USD")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_hidden = Column(Boolean, default=False)
 
     # Зв'язки з іншими таблицями
     prices = relationship("Price", back_populates="asset", cascade="all, delete-orphan")

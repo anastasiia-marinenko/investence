@@ -140,6 +140,10 @@ def validate_and_save_asset(ticker: str, db: Session) -> Asset | None:
     # Перевіряємо чи актив вже є в базі даних
     existing = db.query(Asset).filter(Asset.ticker == ticker_upper).first()
     if existing:
+        # Скидаємо is_hidden якщо актив був прихований
+        if getattr(existing, "is_hidden", False):
+            existing.is_hidden = False
+            db.commit()
         return existing
 
     # Отримуємо інформацію
@@ -155,6 +159,7 @@ def validate_and_save_asset(ticker: str, db: Session) -> Asset | None:
         exchange=info["exchange"],
         sector=info["sector"],
         currency=info["currency"],
+        is_hidden=False,  # явно встановлюємо
     )
     db.add(asset)
     db.commit()

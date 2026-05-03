@@ -11,6 +11,7 @@ import Top from "@/pages/top";
 import News from "@/pages/news";
 import Analytics from "@/pages/analytics";
 import AssetInfo from "@/pages/asset-info";
+import History from "@/pages/history";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/news" component={News} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/asset/:ticker/info" component={AssetInfo} />
+      <Route path="/history" component={History} />
     </Switch>
   );
 }

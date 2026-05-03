@@ -64,13 +64,12 @@ export interface AssetInfo {
 }
 
 export interface HistoryItem {
-  id: number;
   ticker: string;
   name: string;
   asset_type: string;
-  avg_sentiment: number | null;
+  sentiment_score: number | null;
   sentiment_label: string | null;
-  updated_at: string;
+  last_analyzed: string;
 }
 
 export interface TopResponse {
