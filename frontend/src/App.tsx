@@ -6,6 +6,7 @@ import { SettingsProvider } from "@/context/SettingsContext";
 
 import Home from "@/pages/home";
 import Dashboard from "@/pages/dashboard";
+import Compare from "@/pages/compare";
 
 const queryClient = new QueryClient();
 
@@ -14,6 +15,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/dashboard/:ticker" component={Dashboard} />
+      <Route path="/compare" component={Compare} />
     </Switch>
   );
 }
