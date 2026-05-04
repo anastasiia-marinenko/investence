@@ -13,6 +13,7 @@ import Analytics from "@/pages/analytics";
 import AssetInfo from "@/pages/asset-info";
 import History from "@/pages/history";
 import Settings from "@/pages/settings";
+import Error404 from "@/pages/error-404";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,9 @@ function Router() {
       <Route path="/asset/:ticker/info" component={AssetInfo} />
       <Route path="/history" component={History} />
       <Route path="/settings" component={Settings} />
+      <Route path="/404" component={Error404} />
+      {/* Будь-який інший URL → 404 */}
+      <Route component={Error404} />
     </Switch>
   );
 }
