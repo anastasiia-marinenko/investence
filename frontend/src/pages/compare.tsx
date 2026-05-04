@@ -5,6 +5,7 @@ import {
 } from "recharts";
 import Layout from "@/components/Layout";
 import { apiFetch, type DashboardData } from "@/lib/api";
+import { useSettings } from "@/context/SettingsContext";
 
 function SentimentBadge({ s }: { s: string }) {
   if (s === "positive") return <span className="wf-badge-positive">Позитивний</span>;
@@ -29,6 +30,7 @@ export default function Compare() {
   const [tickerA, setTickerA] = useState("");
   const [tickerB, setTickerB] = useState("");
   const [submitted, setSubmitted] = useState<[string, string] | null>(null);
+  const { formatPrice } = useSettings();
 
   const queryA = useQuery({
     queryKey: ["dashboard", submitted?.[0], "30"],
@@ -210,7 +212,7 @@ export default function Compare() {
                           <div className="space-y-0">
                             <InfoRow label="Ціна">
                               <span className="font-mono">
-                                {q.data.current_price != null ? `$${q.data.current_price.toFixed(2)}` : "—"}
+                                {formatPrice(q.data.current_price)}
                               </span>
                             </InfoRow>
                             <InfoRow label="Зміна за день">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -30,8 +30,11 @@ const CARD = "bg-card rounded-xl border border-border shadow-sm p-5 space-y-4";
 export default function Dashboard() {
   const params = useParams<{ ticker: string }>();
   const ticker = params.ticker?.toUpperCase() || "AAPL";
-  const { settings } = useSettings();
+  const { settings, formatPrice } = useSettings();  // додай formatPrice
   const [period, setPeriod] = useState<"7" | "14" | "30">(settings.period as "7" | "14" | "30");
+  useEffect(() => {
+   setPeriod(settings.period as "7" | "14" | "30");
+   }, [settings.period]);
   const [newsFilter, setNewsFilter] = useState<"all" | "positive" | "negative" | "neutral">("all");
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -88,8 +91,7 @@ export default function Dashboard() {
                   <div className="flex items-center gap-4 mt-1.5 text-sm flex-wrap">
                     {data!.current_price != null && (
                       <span className="font-mono font-semibold text-base">
-                        {data!.currency === "USD" ? "$" : data!.currency}
-                        {data!.current_price.toFixed(2)}
+                        {formatPrice(data!.current_price)}
                       </span>
                     )}
                     {data!.daily_change != null && (
@@ -178,7 +180,7 @@ export default function Dashboard() {
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
                 <YAxis domain={["auto", "auto"]} tick={{ fontSize: 11 }} width={60} />
                 <Tooltip
-                  formatter={(v: number) => [`$${v.toFixed(2)}`, "Ціна"]}
+                  formatter={(v: number) => [formatPrice(v), "Ціна"]}
                   labelFormatter={(l) => `Дата: ${l}`}
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
                 />

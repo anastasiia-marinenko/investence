@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
 import { apiFetch, type TopResponse } from "@/lib/api";
+import { useSettings } from "@/context/SettingsContext";
 
 function SentimentBadge({ s }: { s: string | null }) {
   if (s === "positive") return <span className="wf-badge-positive">Позитивний</span>;
@@ -22,6 +23,7 @@ const TABS = [
 
 export default function Top() {
   const [tab, setTab] = useState<"all" | "stock" | "crypto">("all");
+  const { formatPrice } = useSettings();
   const [, navigate] = useLocation();
 
   const { data, isLoading } = useQuery({
@@ -94,7 +96,7 @@ export default function Top() {
                     <td className="py-2.5 font-mono font-semibold">{a.ticker}</td>
                     <td className="py-2.5 text-muted-foreground hidden sm:table-cell">{a.name}</td>
                     <td className="py-2.5 text-right font-mono">
-                      {a.current_price != null ? `$${a.current_price.toFixed(2)}` : "—"}
+                      {formatPrice(a.current_price)}
                     </td>
                     <td
                       className={`py-2.5 text-right font-mono ${

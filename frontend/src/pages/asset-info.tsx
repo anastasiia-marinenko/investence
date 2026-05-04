@@ -5,6 +5,7 @@ import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
 import { apiFetch } from "@/lib/api";
+import { useSettings } from "@/context/SettingsContext";
 
 interface AssetInfoData {
   ticker: string;
@@ -57,10 +58,7 @@ export default function AssetInfo() {
     enabled: !!ticker,
   });
 
-  const currencySymbol = data?.currency === "USD" ? "$"
-    : data?.currency === "EUR" ? "€"
-    : data?.currency === "UAH" ? "грн"
-    : "$";
+  const { formatPrice } = useSettings();
 
   return (
     <Layout>
@@ -107,9 +105,7 @@ export default function AssetInfo() {
               <div>
                 <Row
                   label="Поточна ціна"
-                  value={data?.current_price != null
-                    ? `${currencySymbol}${data.current_price.toFixed(2)}`
-                    : undefined}
+                  value={data?.current_price != null ? formatPrice(data.current_price) : undefined}
                 />
                 <Row
                   label="Зміна за день"
@@ -132,15 +128,11 @@ export default function AssetInfo() {
                 )}
                 <Row
                   label="Максимум за 52 тижні"
-                  value={data?.week_high_52 != null
-                    ? `${currencySymbol}${data.week_high_52.toFixed(2)}`
-                    : undefined}
+                  value={data?.week_high_52 != null ? formatPrice(data.week_high_52) : undefined}
                 />
                 <Row
                   label="Мінімум за 52 тижні"
-                  value={data?.week_low_52 != null
-                    ? `${currencySymbol}${data.week_low_52.toFixed(2)}`
-                    : undefined}
+                  value={data?.week_low_52 != null ? formatPrice(data.week_low_52) : undefined}
                 />
                 {data?.sector && <Row label="Сектор" value={data.sector} />}
                 <Row label="Валюта" value={data?.currency || "USD"} />

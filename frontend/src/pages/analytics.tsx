@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import Layout from "@/components/Layout";
 import { apiFetch } from "@/lib/api";
+import { useSettings } from "@/context/SettingsContext";
 
 // Тип відповіді бекенду
 
@@ -83,6 +84,8 @@ export default function Analytics() {
     queryFn: () => apiFetch<AnalyticsResponse>("/analytics"),
     staleTime: 5 * 60 * 1000,
   });
+
+  const { formatPrice } = useSettings();
 
   // Кругова діаграма
   const pieData = data ? [
@@ -340,7 +343,7 @@ export default function Analytics() {
                       <td className="py-2.5 font-mono font-semibold">{a.ticker}</td>
                       <td className="py-2.5 text-muted-foreground hidden sm:table-cell text-xs">{a.name}</td>
                       <td className="py-2.5 text-right font-mono">
-                        {a.current_price != null ? `$${a.current_price.toFixed(2)}` : "—"}
+                        {formatPrice(a.current_price)}
                       </td>
                       <td className={`py-2.5 text-right font-mono font-semibold ${
                         (a.change_day_pct ?? 0) >= 0 ? "text-green-600" : "text-red-600"
