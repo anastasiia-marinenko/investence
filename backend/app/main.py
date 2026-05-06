@@ -1,5 +1,5 @@
 """
-Investence API -- головний модуль FastAPI застосунку.
+Investence API - головний модуль FastAPI застосунку.
 Ініціалізує застосунок, підключає middleware та роутери.
 """
 import logging
@@ -32,9 +32,9 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# ── Middleware ────────────────────────────────────────────────────────────────
+# Middleware
 
-# CORS -- дозволяє React фронтенду звертатись до API
+# CORS - дозволяє React фронтенду звертатись до API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -62,7 +62,7 @@ async def error_handling_middleware(request: Request, call_next):
         duration = (datetime.utcnow() - start_time).total_seconds()
         logger.info(
             f"{request.method} {request.url.path} "
-            f"-- {response.status_code} ({duration:.3f}s)"
+            f"- {response.status_code} ({duration:.3f}s)"
         )
         return response
 
@@ -70,7 +70,7 @@ async def error_handling_middleware(request: Request, call_next):
         duration = (datetime.utcnow() - start_time).total_seconds()
         logger.error(
             f"{request.method} {request.url.path} "
-            f"-- 500 ({duration:.3f}s) -- {str(exc)}"
+            f"- 500 ({duration:.3f}s) - {str(exc)}"
         )
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -110,18 +110,18 @@ async def validate_ticker_middleware(request: Request, call_next):
 
     return await call_next(request)
 
-# ── Роутери ───────────────────────────────────────────────────────────────────
+# Роутери
 
 app.include_router(assets_router)
 app.include_router(analytics_router)
 app.include_router(export_router)
 app.include_router(top_router)
 
-# ── Базові ендпоінти ──────────────────────────────────────────────────────────
+# Базові ендпоінти
 
 @app.get("/", tags=["root"])
 def root():
-    """Кореневий ендпоінт -- перевірка що API запущений."""
+    """Кореневий ендпоінт - перевірка що API запущений."""
     return {
         "message": "Investence API is running",
         "version": "1.0.0",

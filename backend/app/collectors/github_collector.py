@@ -1,5 +1,5 @@
 """
-GitHub Collector -- збір активності розробників на GitHub.
+GitHub Collector - збір активності розробників на GitHub.
 Використовує GitHub REST API з автентифікацією через Personal Access Token.
 Працює лише для криптовалютних активів.
 """
@@ -32,7 +32,7 @@ KNOWN_REPOS = {
 ACTIVITY_THRESHOLDS = {
     "high":   100,  # 100+ комітів за місяць
     "medium":  10,  # 10-99 комітів за місяць
-    # менше 10 -- low
+    # менше 10 - low
 }
 
 
@@ -161,7 +161,7 @@ class GitHubCollector:
         # Перевіряємо відомі репозиторії
         repo_names = KNOWN_REPOS.get(ticker_upper)
 
-        # Якщо немає у відомих -- шукаємо через API
+        # Якщо немає у відомих - шукаємо через API
         if not repo_names:
             repo_names = self._search_repos(ticker_upper, asset_name)
 

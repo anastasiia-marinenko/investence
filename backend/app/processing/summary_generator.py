@@ -1,5 +1,5 @@
 """
-Summary Generator -- генерація аналітичного звіту за допомогою AI.
+Summary Generator - генерація аналітичного звіту за допомогою AI.
 Агрегує дані з трьох джерел та генерує стислий звіт через Groq API.
 Звіт формується не довше 15 секунд.
 """
@@ -50,7 +50,7 @@ class SummaryGenerator:
 
     GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
     MAX_RETRIES = 3
-    TIMEOUT = 12  # секунди -- менше 15 щоб залишити час на обробку
+    TIMEOUT = 12  # секунди - менше 15 щоб залишити час на обробку
 
     def _get_price_context(self, asset: Asset, db: Session) -> dict:
         """

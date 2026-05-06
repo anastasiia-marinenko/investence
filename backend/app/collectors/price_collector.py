@@ -1,5 +1,5 @@
 """
-Price Collector -- збір історичних цінових даних OHLCV.
+Price Collector - збір історичних цінових даних OHLCV.
 Основне джерело: Yahoo Finance через прямі HTTP-запити.
 Резервне джерело: Alpha Vantage API.
 """
@@ -108,7 +108,7 @@ class PriceCollector:
 
     def _fetch_from_alpha_vantage(self, ticker: str, days: int) -> list[dict]:
         """
-        Резервне джерело -- Alpha Vantage API.
+        Резервне джерело - Alpha Vantage API.
         Використовується якщо Yahoo Finance недоступний.
         """
         api_key = getattr(settings, "ALPHA_VANTAGE_API_KEY", None)
@@ -173,10 +173,10 @@ class PriceCollector:
         """
         ticker_upper = ticker.upper().strip()
 
-        # Основне джерело -- Yahoo Finance
+        # Основне джерело - Yahoo Finance
         prices = self._fetch_from_yahoo(ticker_upper, days)
 
-        # Резервне джерело -- Alpha Vantage
+        # Резервне джерело - Alpha Vantage
         if not prices:
             prices = self._fetch_from_alpha_vantage(ticker_upper, days)
 

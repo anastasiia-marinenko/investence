@@ -1,5 +1,5 @@
 """
-Sentiment Analyzer -- аналіз тональності новин за допомогою LLM.
+Sentiment Analyzer - аналіз тональності новин за допомогою LLM.
 Основний постачальник: Groq API (Llama 3).
 Резервний постачальник: Google Gemini API.
 Реалізує логіку повторних спроб.
@@ -49,13 +49,13 @@ class SentimentAnalyzer:
         Обробляє випадки коли LLM додає зайвий текст навколо JSON.
         """
         try:
-            # Спроба 1 -- пряме парсування
+            # Спроба 1 - пряме парсування
             return json.loads(text.strip())
         except json.JSONDecodeError:
             pass
 
         try:
-            # Спроба 2 -- шукаємо JSON у тексті
+            # Спроба 2 - шукаємо JSON у тексті
             match = re.search(r'\{[^{}]*"label"[^{}]*"score"[^{}]*\}', text, re.DOTALL)
             if match:
                 return json.loads(match.group())
@@ -63,7 +63,7 @@ class SentimentAnalyzer:
             pass
 
         try:
-            # Спроба 3 -- шукаємо label та score окремо
+            # Спроба 3 - шукаємо label та score окремо
             label_match = re.search(r'"label"\s*:\s*"(positive|negative|neutral)"', text)
             score_match = re.search(r'"score"\s*:\s*(-?\d+\.?\d*)', text)
             if label_match and score_match:
@@ -139,17 +139,17 @@ class SentimentAnalyzer:
                         return self._validate_result(result)
 
                 elif response.status_code == 429:
-                    # Rate limit -- чекаємо довше перед наступною спробою
+                    # Rate limit - чекаємо довше перед наступною спробою
                     time.sleep(self.RETRY_DELAY * (attempt + 2))
                     continue
 
                 elif response.status_code in (500, 502, 503):
-                    # Серверна помилка -- повторюємо
+                    # Серверна помилка - повторюємо
                     time.sleep(self.RETRY_DELAY * (attempt + 1))
                     continue
 
                 else:
-                    # Інша помилка -- не повторюємо
+                    # Інша помилка - не повторюємо
                     break
 
             except requests.exceptions.Timeout:
@@ -163,7 +163,7 @@ class SentimentAnalyzer:
 
     def _analyze_with_gemini(self, text: str) -> dict | None:
         """
-        Резервний постачальник -- Google Gemini API (безкоштовний тариф).
+        Резервний постачальник - Google Gemini API (безкоштовний тариф).
         Використовується якщо Groq API недоступний.
         """
         api_key = getattr(settings, "GEMINI_API_KEY", None)
@@ -214,10 +214,10 @@ class SentimentAnalyzer:
         if not text or not text.strip():
             return {"label": "neutral", "score": 0.0}
 
-        # Основний постачальник -- Groq
+        # Основний постачальник - Groq
         result = self._analyze_with_groq(text)
 
-        # Резервний постачальник -- Gemini
+        # Резервний постачальник - Gemini
         if not result:
             result = self._analyze_with_gemini(text)
 
@@ -237,12 +237,12 @@ class SentimentAnalyzer:
         failed_count = 0
 
         for news in news_list:
-            # Пропускаємо вже проаналізовані -- кешування результатів
+            # Пропускаємо вже проаналізовані - кешування результатів
             if news.is_analyzed and news.sentiment_score is not None:
                 updated.append(news)
                 continue
 
-            # Якщо занадто багато помилок підряд -- зупиняємо
+            # Якщо занадто багато помилок підряд - зупиняємо
             # щоб не вичерпати ліміт API
             if failed_count >= 3:
                 break

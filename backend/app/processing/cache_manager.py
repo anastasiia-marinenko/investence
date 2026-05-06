@@ -1,5 +1,5 @@
 """
-Cache Manager -- централізоване управління кешуванням даних.
+Cache Manager - централізоване управління кешуванням даних.
 Перевіряє наявність свіжих даних у БД перед зверненням до зовнішніх API.
 Кеш є спільним для всіх користувачів.
 Кешовані дані завантажуються не довше 2 секунд.
@@ -31,12 +31,12 @@ class CacheManager:
         """Перевіряє чи є timestamp свіжим (молодшим за TTL)."""
         return datetime.utcnow() - timestamp < self.ttl
 
-    # ── PRICES ────────────────────────────────────────────────────────────────
+    # PRICES
 
     def get_cached_prices(self, asset: Asset, days: int = 30) -> list | None:
         """
         Повертає кешовані цінові дані якщо вони свіжі.
-        Повертає None якщо кеш відсутній або застарів -- сигнал для збору.
+        Повертає None якщо кеш відсутній або застарів - сигнал для збору.
         """
         cutoff = datetime.utcnow() - self.ttl
 
@@ -46,21 +46,21 @@ class CacheManager:
         ).order_by(Price.date.asc()).all()
 
         if not prices:
-            logger.info(f"CACHE MISS [prices] {asset.ticker} -- no fresh data")
+            logger.info(f"CACHE MISS [prices] {asset.ticker} - no fresh data")
             return None
 
-        # Достатньо даних -- повертаємо з кешу
+        # Достатньо даних - повертаємо з кешу
         if len(prices) < days - 10:
             logger.info(
-                f"CACHE MISS [prices] {asset.ticker} -- "
+                f"CACHE MISS [prices] {asset.ticker} - "
                 f"insufficient data ({len(prices)} records)"
             )
             return None
 
-        logger.info(f"CACHE HIT [prices] {asset.ticker} -- {len(prices)} records")
+        logger.info(f"CACHE HIT [prices] {asset.ticker} - {len(prices)} records")
         return prices
 
-    # ── NEWS ──────────────────────────────────────────────────────────────────
+    # NEWS
 
     def get_cached_news(self, asset: Asset) -> list | None:
         """
@@ -74,13 +74,13 @@ class CacheManager:
         ).order_by(News.published_at.desc()).limit(20).all()
 
         if not news:
-            logger.info(f"CACHE MISS [news] {asset.ticker} -- no fresh data")
+            logger.info(f"CACHE MISS [news] {asset.ticker} - no fresh data")
             return None
 
-        logger.info(f"CACHE HIT [news] {asset.ticker} -- {len(news)} articles")
+        logger.info(f"CACHE HIT [news] {asset.ticker} - {len(news)} articles")
         return news
 
-    # ── GITHUB ────────────────────────────────────────────────────────────────
+    # GITHUB
 
     def get_cached_github(self, asset: Asset) -> list | None:
         """
@@ -98,13 +98,13 @@ class CacheManager:
         ).all()
 
         if not stats:
-            logger.info(f"CACHE MISS [github] {asset.ticker} -- no fresh data")
+            logger.info(f"CACHE MISS [github] {asset.ticker} - no fresh data")
             return None
 
-        logger.info(f"CACHE HIT [github] {asset.ticker} -- {len(stats)} repos")
+        logger.info(f"CACHE HIT [github] {asset.ticker} - {len(stats)} repos")
         return stats
 
-    # ── SENTIMENT ─────────────────────────────────────────────────────────────
+    # SENTIMENT
 
     def get_cached_sentiment(self, asset: Asset) -> list | None:
         """
@@ -120,16 +120,16 @@ class CacheManager:
         ).all()
 
         if not analyzed:
-            logger.info(f"CACHE MISS [sentiment] {asset.ticker} -- no analyzed news")
+            logger.info(f"CACHE MISS [sentiment] {asset.ticker} - no analyzed news")
             return None
 
         logger.info(
-            f"CACHE HIT [sentiment] {asset.ticker} -- "
+            f"CACHE HIT [sentiment] {asset.ticker} - "
             f"{len(analyzed)} analyzed articles"
         )
         return analyzed
 
-    # ── SUMMARY ───────────────────────────────────────────────────────────────
+    # SUMMARY
 
     def get_cached_summary(self, asset: Asset) -> str | None:
         """
@@ -142,22 +142,22 @@ class CacheManager:
         ).order_by(DailyScore.date.desc()).first()
 
         if not score or not score.summary_generated_at:
-            logger.info(f"CACHE MISS [summary] {asset.ticker} -- no summary")
+            logger.info(f"CACHE MISS [summary] {asset.ticker} - no summary")
             return None
 
         if not self._is_fresh(score.summary_generated_at):
-            logger.info(f"CACHE MISS [summary] {asset.ticker} -- stale summary")
+            logger.info(f"CACHE MISS [summary] {asset.ticker} - stale summary")
             return None
 
         logger.info(f"CACHE HIT [summary] {asset.ticker}")
         return score.summary
 
-    # ── ASSET ─────────────────────────────────────────────────────────────────
+    # ASSET
 
     def get_cached_asset(self, ticker: str) -> Asset | None:
         """
         Повертає актив з БД якщо він існує.
-        Активи не мають TTL -- вони зберігаються постійно.
+        Активи не мають TTL - вони зберігаються постійно.
         """
         asset = self.db.query(Asset).filter(
             Asset.ticker == ticker.upper().strip()
@@ -170,7 +170,7 @@ class CacheManager:
 
         return asset
 
-    # ── CACHE STATUS ──────────────────────────────────────────────────────────
+    # CACHE STATUS
 
     def get_cache_status(self, asset: Asset) -> dict:
         """
@@ -232,13 +232,13 @@ class CacheManager:
             },
         }
 
-    # ── INVALIDATE ────────────────────────────────────────────────────────────
+    # INVALIDATE
 
     def invalidate_asset_cache(self, asset: Asset) -> None:
         """
         Примусово інвалідує кеш для активу.
         Використовується при натисканні кнопки «Оновити дані» на дашборді.
-        Не видаляє дані -- оновлює created_at на давню дату.
+        Не видаляє дані - оновлює created_at на давню дату.
         """
         old_date = datetime.utcnow() - timedelta(hours=25)
 

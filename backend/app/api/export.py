@@ -1,5 +1,5 @@
 """
-Export API -- ендпоінт для завантаження CSV-файлу з даними активу.
+Export API - ендпоінт для завантаження CSV-файлу з даними активу.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response

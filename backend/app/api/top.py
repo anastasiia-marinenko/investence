@@ -1,5 +1,5 @@
 """
-Top Assets API -- рейтинг активів за інвестиційним настроєм.
+Top Assets API - рейтинг активів за інвестиційним настроєм.
 Використовується сторінкою /top фронтенду.
 """
 from fastapi import APIRouter, Depends
@@ -19,8 +19,7 @@ def get_top_assets(
     """
     Повертає рейтинг активів відсортованих за середньою оцінкою настрою.
 
-    Args:
-        category: фільтр категорії -- "all", "stock" або "crypto"
+    - **category**: фільтр категорії: "all", "stock" або "crypto"
     """
     # Фільтруємо активи за категорією
     query = db.query(Asset)

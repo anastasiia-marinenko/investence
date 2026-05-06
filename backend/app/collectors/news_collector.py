@@ -1,5 +1,5 @@
 """
-News Collector -- збір фінансових новин для активу.
+News Collector - збір фінансових новин для активу.
 Основне джерело: NewsAPI (100 запитів/день на безкоштовному тарифі).
 Резервне джерело: GNews API (безкоштовний тариф).
 """
@@ -23,7 +23,7 @@ class NewsCollector:
     def _build_search_query(self, ticker: str, asset_name: str) -> str:
         """
         Будує пошуковий запит для новин.
-        Для крипто використовує повну назву, для акцій -- тікер.
+        Для крипто використовує повну назву, для акцій - тікер.
         """
         # Видаляємо суфікс -USD для крипто
         clean_ticker = ticker.replace("-USD", "").replace("-USDT", "")
@@ -62,7 +62,7 @@ class NewsCollector:
             )
 
             if response.status_code == 429:
-                # Rate limit досягнуто -- повертаємо порожній список
+                # Rate limit досягнуто - повертаємо порожній список
                 # щоб спрацювало резервне джерело
                 return []
 
@@ -110,7 +110,7 @@ class NewsCollector:
 
     def _fetch_from_gnews(self, ticker: str, asset_name: str) -> list[dict]:
         """
-        Резервне джерело -- GNews API (безкоштовний тариф: 100 запитів/день).
+        Резервне джерело - GNews API (безкоштовний тариф: 100 запитів/день).
         Використовується якщо NewsAPI недоступний або вичерпав ліміт.
         """
         api_key = getattr(settings, "GNEWS_API_KEY", None)
@@ -176,10 +176,10 @@ class NewsCollector:
         """
         ticker_upper = ticker.upper().strip()
 
-        # Основне джерело -- NewsAPI
+        # Основне джерело - NewsAPI
         articles = self._fetch_from_newsapi(ticker_upper, asset_name)
 
-        # Резервне джерело -- GNews
+        # Резервне джерело - GNews
         if not articles:
             articles = self._fetch_from_gnews(ticker_upper, asset_name)
 

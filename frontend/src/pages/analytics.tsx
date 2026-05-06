@@ -145,7 +145,7 @@ export default function Analytics() {
       <div className="space-y-6">
         <h2 className="text-xl font-bold text-center">Загальна аналітика</h2>
 
-        {/* ── Зведена статистика ── */}
+        {/*  Зведена статистика  */}
         <div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {statCards.map((s) => (
@@ -166,7 +166,7 @@ export default function Analytics() {
           )}
         </div>
 
-        {/* ── Новини ── */}
+        {/*  Новини  */}
         <div className="space-y-4">
           {/* Кругова діаграма */}
           <div className={CARD}>
@@ -276,7 +276,7 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/* ── Цінові дані ── */}
+        {/*  Цінові дані  */}
         <div className="space-y-4">
           {/* Лінійний графік цінової зміни */}
           <div className={CARD}>
@@ -367,7 +367,7 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/* ── GitHub-активність ── */}
+        {/*  GitHub-активність  */}
         <div className="space-y-4">
           {/* Стовпчаста діаграма комітів */}
           <div className={CARD}>

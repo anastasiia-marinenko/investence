@@ -1,5 +1,5 @@
 """
-Asset Search -- пошук та валідація фінансового активу за тікером.
+Asset Search - пошук та валідація фінансового активу за тікером.
 Використовує прямі HTTP-запити до Yahoo Finance API.
 """
 import requests
@@ -30,7 +30,7 @@ def fetch_asset_info(ticker: str) -> dict | None:
     ticker_upper = ticker.upper().strip()
 
     try:
-        # Крок 1 -- отримуємо crumb та cookies (потрібно для автентифікації)
+        # Крок 1 - отримуємо crumb та cookies (потрібно для автентифікації)
         session = requests.Session()
         session.headers.update(HEADERS)
 
@@ -48,7 +48,7 @@ def fetch_asset_info(ticker: str) -> dict | None:
 
         crumb = crumb_response.text.strip()
 
-        # Крок 2 -- отримуємо дані активу
+        # Крок 2 - отримуємо дані активу
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_upper}"
         params = {
             "interval": "1d",
@@ -86,7 +86,7 @@ def fetch_asset_info(ticker: str) -> dict | None:
 
 def _fallback_search(ticker: str, session: requests.Session) -> dict | None:
     """
-    Резервний метод -- пошук через Yahoo Finance Search API.
+    Резервний метод - пошук через Yahoo Finance Search API.
     Використовується якщо основний метод не спрацював.
     """
     try:

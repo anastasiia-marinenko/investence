@@ -118,7 +118,7 @@ def get_prices(
             ]
         }
 
-    # Кеш промах -- збираємо свіжі дані
+    # Кеш промах - збираємо свіжі дані
     collector = PriceCollector()
     prices = collector.collect_and_save(ticker_upper, asset, db, days)
 
@@ -193,7 +193,7 @@ def get_news(ticker: str, refresh: bool = False, db: Session = Depends(get_db)):
             ]
         }
 
-    # Кеш промах -- збираємо свіжі дані
+    # Кеш промах - збираємо свіжі дані
     collector = NewsCollector()
     news = collector.collect_and_save(ticker_upper, asset, db)
 
@@ -279,7 +279,7 @@ def get_github(ticker: str, db: Session = Depends(get_db)):
             ]
         }
 
-    # Кеш промах -- збираємо свіжі дані
+    # Кеш промах - збираємо свіжі дані
     collector = GitHubCollector()
     stats = collector.collect_and_save(ticker_upper, asset, db)
 
@@ -307,7 +307,7 @@ def get_github(ticker: str, db: Session = Depends(get_db)):
 def analyze_sentiment(ticker: str, db: Session = Depends(get_db)):
     """
     Запускає аналіз тональності для всіх непроаналізованих новин активу.
-    Кешує результати у БД -- повторний виклик не витрачає API запити.
+    Кешує результати у БД - повторний виклик не витрачає API запити.
     """
     ticker_upper = ticker.upper().strip()
 
@@ -475,6 +475,11 @@ def invalidate_cache(ticker: str, db: Session = Depends(get_db)):
 
 @router.get("/{ticker}/info")
 def get_asset_info(ticker: str, db: Session = Depends(get_db)):
+    """
+    Повертає детальну інформацію про актив.
+    
+    - **ticker**: тікер-символ активу (наприклад AAPL або BTC-USD)
+    """
     import yfinance as yf
     import requests
     import logging
@@ -499,7 +504,7 @@ def get_asset_info(ticker: str, db: Session = Depends(get_db)):
         if v >= 1e6: return f"{v / 1e6:.1f}M"
         return f"{v:,.0f}"
 
-    # ── Базові дані з БД ───────────────────────────────────────────────────
+    # Базові дані з БД
     prices = db.query(Price).filter(
         Price.asset_id == asset.id
     ).order_by(Price.date.desc()).limit(365).all()
@@ -525,7 +530,7 @@ def get_asset_info(ticker: str, db: Session = Depends(get_db)):
     market_cap   = None
     sector       = asset.sector
 
-    # ── Перевіряємо кеш в Asset ────────────────────────────────────────────
+    # Перевіряємо кеш в Asset
     INFO_TTL_HOURS = 24
     info_cached_at = getattr(asset, "info_cached_at", None)
     cache_is_fresh = (
@@ -540,7 +545,7 @@ def get_asset_info(ticker: str, db: Session = Depends(get_db)):
         _logger.info(f"Asset info served from DB cache for {ticker_upper}")
 
     else:
-        # ── Джерело 1: yfinance ────────────────────────────────────────────
+        # Джерело 1: yfinance
         info_loaded = False
         try:
             yf_ticker = yf.Ticker(ticker_upper)
@@ -581,7 +586,7 @@ def get_asset_info(ticker: str, db: Session = Depends(get_db)):
         except Exception as e:
             _logger.warning(f"yfinance failed for {ticker_upper}: {e}")
 
-        # ── Джерело 2: Alpha Vantage (fallback якщо yfinance не дав даних) ─
+        # Джерело 2: Alpha Vantage (fallback якщо yfinance не дав даних)
         if not info_loaded:
             try:
                 av_key = getattr(settings, "ALPHA_VANTAGE_API_KEY", None)
@@ -624,7 +629,7 @@ def get_asset_info(ticker: str, db: Session = Depends(get_db)):
             except Exception as e:
                 _logger.warning(f"Alpha Vantage failed for {ticker_upper}: {e}")
 
-       # ── Джерело 3: CoinGecko (fallback для крипто) ─────────────────────────
+       # Джерело 3: CoinGecko (fallback для крипто)
         if not info_loaded and asset.asset_type == "crypto":
             try:
                 COINGECKO_IDS = {
@@ -663,27 +668,27 @@ def get_asset_info(ticker: str, db: Session = Depends(get_db)):
                     cg = resp.json()
                     mkt = cg.get("market_data", {})
 
-                    # ── ціна ──────────────────────────────────────────────────
+                    # ціна
                     cg_price = mkt.get("current_price", {}).get("usd")
                     if cg_price:
                         current_price = cg_price
 
-                    # ── зміна за день (CoinGecko повертає у відсотках, напр. 0.37) ──
+                    # зміна за день (CoinGecko повертає у відсотках, напр. 0.37)
                     cg_change = mkt.get("price_change_percentage_24h")
                     if cg_change is not None:
                         daily_change = round(cg_change, 4)
 
-                    # ── market_cap ────────────────────────────────────────────
+                    # market_cap
                     raw_cap = mkt.get("market_cap", {}).get("usd")
                     if raw_cap:
                         market_cap = fmt_large(raw_cap)
 
-                    # ── volume ────────────────────────────────────────────────
+                    # volume
                     cg_vol = mkt.get("total_volume", {}).get("usd")
                     if cg_vol:
                         volume_db = cg_vol
 
-                    # ── week_high_52 / week_low_52 ────────────────────────────
+                    # week_high_52 / week_low_52
                     # CoinGecko не має точного поля "52-week high/low"
                     # Використовуємо ath якщо він був протягом останнього року,
                     # інакше рахуємо через price_change_percentage_1y
@@ -717,7 +722,7 @@ def get_asset_info(ticker: str, db: Session = Depends(get_db)):
                         # ATL для BTC це $67 з 2013 — не підходить для 52-week low
                         week_low_52 = round(min(cg_price, price_1y_ago), 2)
 
-                    # ── sector ────────────────────────────────────────────────
+                    # sector
                     categories = cg.get("categories", [])
                     if categories:
                         # Пріоритет відповідає реальним категоріям CoinGecko
@@ -737,7 +742,7 @@ def get_asset_info(ticker: str, db: Session = Depends(get_db)):
                             categories[0]
                         )
 
-                    # ── опис ──────────────────────────────────────────────────
+                    # опис
                     desc = cg.get("description", {}).get("en", "")
                     if desc and not description:
                         description = desc[:500].rsplit(" ", 1)[0] + "..."
@@ -755,7 +760,7 @@ def get_asset_info(ticker: str, db: Session = Depends(get_db)):
             except Exception as e:
                 _logger.warning(f"CoinGecko failed for {ticker_upper}: {e}")
        
-        # ── Зберігаємо в кеш якщо хоч щось отримали ──────────────────────
+        # Зберігаємо в кеш якщо хоч щось отримали
         if info_loaded:
             try:
                 asset.market_cap     = market_cap
@@ -797,10 +802,9 @@ def get_dashboard(
     Агрегує: інформацію про актив, ціни, новини, GitHub,
     кореляцію та AI-звіт.
 
-    Args:
-        ticker: тікер-символ активу (наприклад AAPL або BTC-USD)
-        days: кількість днів для цінових даних (за замовчуванням 30)
-        refresh: примусове оновлення кешу (за замовчуванням False)
+    - **ticker**: тікер-символ активу (наприклад AAPL або BTC-USD)
+    - **days**: кількість днів для цінових даних (за замовчуванням 30)
+    - **refresh**: примусове оновлення кешу (за замовчуванням False)
     """
     ticker_upper = ticker.upper().strip()
 
@@ -831,7 +835,7 @@ def get_dashboard(
     if refresh:
         cache.invalidate_asset_cache(asset)
 
-    # ── Збираємо всі дані паралельно ─────────────────────────────────────────
+    # Збираємо всі дані паралельно
 
     # 1. Цінові дані
     cached_prices = cache.get_cached_prices(asset, days)
@@ -899,7 +903,7 @@ def get_dashboard(
     # 7. Статус кешу
     cache_status = cache.get_cache_status(asset)
 
-    # ── Формуємо відповідь ────────────────────────────────────────────────────
+    # Формуємо відповідь
 
     # Розраховуємо поточну ціну та зміну за день
     current_price = None
@@ -1050,6 +1054,9 @@ def get_history(db: Session = Depends(get_db)):
 # clear_history — просто ховає
 @router.delete("")
 def clear_history(db: Session = Depends(get_db)):
+    """
+    Видаляє історію проаналізованих активів.
+    """
     db.query(Asset).update({"is_hidden": True})
     db.commit()
     return {"message": "Історію очищено"}
