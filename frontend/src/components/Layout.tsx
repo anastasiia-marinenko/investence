@@ -177,7 +177,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <p className="text-xs text-muted-foreground mt-0.5">AI-аналіз інвестиційного настрою</p>
             </div>
             <a
-              href="https://github.com"
+              href="https://github.com/anastasiia-marinenko/investence"
               target="_blank"
               rel="noreferrer"
               className="text-xs text-primary hover:underline"
