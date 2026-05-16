@@ -3,6 +3,7 @@ services:
   # PostgreSQL база даних
   postgres:
     image: postgres:16
+    platform: linux/amd64
     container_name: investence-db
     restart: unless-stopped
     env_file:
@@ -22,6 +23,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    platform: linux/amd64
     container_name: investence-app
     restart: unless-stopped
     env_file:

@@ -1,12 +1,12 @@
 /**
  * Сторінка детальної інформації про актив (/asset/:ticker/info).
  */
+import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
 import { apiFetch } from "@/lib/api";
 import { useSettings } from "@/context/SettingsContext";
-
 interface AssetInfoData {
   ticker: string;
   name: string;
@@ -48,6 +48,8 @@ function Skeleton({ className = "" }: { className?: string }) {
 }
 
 export default function AssetInfo() {
+  const [expanded, setExpanded] = useState(false);
+
   const params = useParams<{ ticker: string }>();
   const ticker = params.ticker?.toUpperCase() || "";
 
@@ -144,9 +146,20 @@ export default function AssetInfo() {
                   <p className="text-sm font-semibold text-foreground">
                     {data.is_crypto ? "Про проєкт" : "Про компанію"}
                   </p>
-                  <p className="text-sm text-muted-foreground leading-relaxed line-clamp-8">
+                  <p
+                    className={`text-sm text-muted-foreground leading-relaxed ${
+                      expanded ? "" : "line-clamp-8"
+                    }`}
+                  >
                     {data.description}
                   </p>
+
+                  <button
+                    onClick={() => setExpanded(!expanded)}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {expanded ? "Згорнути" : "Показати більше"}
+                  </button>
                 </div>
               )}
             </>
