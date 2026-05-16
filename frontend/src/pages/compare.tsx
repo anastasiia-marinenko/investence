@@ -92,8 +92,14 @@ export default function Compare() {
                 type="text"
                 value={tickerA}
                 onChange={(e) =>
-                  setTickerA(e.target.value.replace(/[^A-Za-z0-9-]/g, "").toUpperCase())
+                  setTickerA(
+                    e.target.value
+                      .replace(/[^A-Za-z0-9-]/g, "")
+                      .toUpperCase()
+                      .slice(0, 10)
+                  )
                 }
+                maxLength={10}
                 placeholder="напр., AAPL"
                 className="border border-border rounded-lg px-3 py-2 text-sm bg-background w-36 focus:outline-none focus:ring-2 focus:ring-ring"
                 onKeyDown={(e) => e.key === "Enter" && handleCompare()}
@@ -106,8 +112,14 @@ export default function Compare() {
                 type="text"
                 value={tickerB}
                 onChange={(e) =>
-                  setTickerB(e.target.value.replace(/[^A-Za-z0-9-]/g, "").toUpperCase())
+                  setTickerB(
+                    e.target.value
+                      .replace(/[^A-Za-z0-9-]/g, "")
+                      .toUpperCase()
+                      .slice(0, 10)
+                  )
                 }
+                maxLength={10}
                 placeholder="напр., BTC-USD"
                 className="border border-border rounded-lg px-3 py-2 text-sm bg-background w-36 focus:outline-none focus:ring-2 focus:ring-ring"
                 onKeyDown={(e) => e.key === "Enter" && handleCompare()}
