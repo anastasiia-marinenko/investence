@@ -144,7 +144,7 @@ export default function Dashboard() {
         {/* Price Chart */}
         <div className={CARD}>
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <p className="text-base font-semibold">Динаміка цін</p>
+            <p className="text-base font-semibold">Динаміка зміни ціни активу за {PERIOD_LABELS[period]}</p>
             <div className="flex gap-1">
               {(["7", "14", "30"] as const).map((p) => (
                 <button
@@ -201,7 +201,7 @@ export default function Dashboard() {
         <div className={CARD}>
           <div className="flex items-start justify-between flex-wrap gap-3">
             <div>
-              <p className="text-base font-semibold mb-2">Новини та настрій</p>
+              <p className="text-base font-semibold mb-2">Аналіз новин та ринкового настрою</p>
               {isLoading ? (
                 <Skeleton className="h-8 w-40" />
               ) : (
@@ -306,7 +306,7 @@ export default function Dashboard() {
 
         {/* Correlation */}
         <div className={CARD}>
-          <p className="text-base font-semibold">Кореляція настрою та ціни</p>
+          <p className="text-base font-semibold">Взаємозв’язок новинного настрою та зміни ціни</p>
           {isLoading ? (
             <Skeleton className="h-36 w-full" />
           ) : data?.correlation.chart_data && data.correlation.chart_data.length > 0 ? (
@@ -373,7 +373,7 @@ export default function Dashboard() {
         {/* GitHub */}
         {!isLoading && (
           <div className={CARD}>
-            <p className="text-base font-semibold">Активність розробників на GitHub</p>
+            <p className="text-base font-semibold">Активність розробників у GitHub-репозиторіях</p>
             {!data?.is_crypto ? (
               <p className="text-sm text-muted-foreground text-center py-4">
                 Аналіз активності розробників доступний лише для криптовалютних активів.

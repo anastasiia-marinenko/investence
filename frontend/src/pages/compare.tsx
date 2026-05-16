@@ -150,7 +150,7 @@ export default function Compare() {
           <>
             <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-3">
               <p className="text-sm font-semibold text-foreground">
-                Динаміка цін (зміна у %, 30 днів)
+                Порівняння зміни цін активів за останні 30 днів (%)
               </p>
               {queryA.isLoading || queryB.isLoading ? (
                 <Skeleton className="h-44 w-full" />

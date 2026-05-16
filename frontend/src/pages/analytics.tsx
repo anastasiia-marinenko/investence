@@ -170,7 +170,7 @@ export default function Analytics() {
         <div className="space-y-4">
           {/* Кругова діаграма */}
           <div className={CARD}>
-            <p className="text-sm font-semibold text-foreground">Розподіл настроїв</p>
+            <p className="text-sm font-semibold text-foreground">Розподіл новин за тональністю</p>
             {isLoading ? (
               <Skeleton className="h-52 w-full" />
             ) : pieData.length > 0 ? (
@@ -210,7 +210,7 @@ export default function Analytics() {
 
           {/* Стовпчаста діаграма активності новин */}
           <div className={CARD}>
-            <p className="text-sm font-semibold text-foreground">Активність новин (останні 7 днів)</p>
+            <p className="text-sm font-semibold text-foreground">Динаміка кількості новин за останні 7 днів</p>
             {isLoading ? (
               <Skeleton className="h-40 w-full" />
             ) : (
@@ -280,7 +280,7 @@ export default function Analytics() {
         <div className="space-y-4">
           {/* Лінійний графік цінової зміни */}
           <div className={CARD}>
-            <p className="text-sm font-semibold text-foreground">Середня цінова зміна (останні 7 днів)</p>
+            <p className="text-sm font-semibold text-foreground">Середня зміна ціни активів за останні 7 днів</p>
             {isLoading ? (
               <Skeleton className="h-40 w-full" />
             ) : (data?.charts.price_activity ?? []).length > 0 ? (
@@ -371,7 +371,7 @@ export default function Analytics() {
         <div className="space-y-4">
           {/* Стовпчаста діаграма комітів */}
           <div className={CARD}>
-            <p className="text-sm font-semibold text-foreground">Активність розробників (останні 7 днів)</p>
+            <p className="text-sm font-semibold text-foreground">Кількість комітів розробників за останні 7 днів</p>
             {isLoading ? (
               <Skeleton className="h-40 w-full" />
             ) : (data?.charts.github_activity ?? []).length > 0 ? (
