@@ -47,12 +47,20 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   function formatPrice(usd: number | null | undefined, decimals = 2): string {
     if (usd == null) return "—";
+
     const rate = RATES[settings.currency] ?? 1;
-    const sym  = SYMBOLS[settings.currency] ?? "$";
-    const val  = usd * rate;
-    // Для UAH — без дробових частин якщо велика сума
-    const d = settings.currency === "UAH" && val > 1000 ? 0 : decimals;
-    return `${sym}${val.toFixed(d)}`;
+    const val = usd * rate;
+
+    const d = decimals;
+
+    const formatted = new Intl.NumberFormat("uk-UA", {
+      minimumFractionDigits: d,
+      maximumFractionDigits: d,
+    }).format(val);
+
+    const sym = SYMBOLS[settings.currency] ?? "$";
+
+    return `${sym}${formatted}`;
   }
 
   return (
