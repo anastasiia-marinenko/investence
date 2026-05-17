@@ -360,7 +360,7 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height={160}>
                 <ComposedChart
                   data={data.correlation.chart_data}
-                  margin={{ top: 5, right: 10, bottom: 5, left: 5 }}
+                  margin={{ top: 5, right: 10, bottom: 0, left: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis

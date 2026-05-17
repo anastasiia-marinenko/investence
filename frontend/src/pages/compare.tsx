@@ -186,7 +186,7 @@ export default function Compare() {
                         value: "Зміна ціни %",
                         angle: -90,
                         position: "insideLeft",
-                        offset: -5,
+                        offset: -1,
                         style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
                       }}
                     />
