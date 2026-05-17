@@ -61,9 +61,15 @@ export default function History() {
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["history"],
-    queryFn: () => apiFetch<{ count: number; assets: HistoryItem[] }>("/assets")
-    .then(r => r.assets),
-    staleTime: 60 * 1000,
+    queryFn: () =>
+      apiFetch<{ count: number; assets: HistoryItem[] }>("/assets")
+        .then((r) => r.assets),
+
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
   });
 
   const clearMutation = useMutation({
