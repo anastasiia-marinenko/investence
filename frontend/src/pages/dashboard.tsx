@@ -394,6 +394,7 @@ export default function Dashboard() {
                       value: "Зміна ціни %",
                       angle: 90,
                       position: "insideRight",
+                      dy: 20,
                       style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
                     }}
                   />
