@@ -41,7 +41,7 @@ interface AnalyticsResponse {
   charts: {
     news_activity:   { date: string; count: number }[];
     price_activity:  { date: string; avg_change_pct: number }[];
-    github_activity: { date: string; commits: number }[];
+    github_activity: { ticker: string; name: string; commits_last_month: number; total_stars: number }[];
   };
   top5: {
     by_sentiment:    { ticker: string; name: string; sentiment_score: number }[];
@@ -84,7 +84,12 @@ export default function Analytics() {
   const { data, isLoading } = useQuery({
     queryKey: ["analytics"],
     queryFn: () => apiFetch<AnalyticsResponse>("/analytics"),
-    staleTime: 5 * 60 * 1000,
+    
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+
+    refetchInterval: 10000,
+    refetchIntervalInBackground: true,
   });
 
   const { formatPrice } = useSettings();
@@ -490,59 +495,69 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/*  GitHub-активність  */}
-        <div className="space-y-4">
-          {/* Стовпчаста діаграма комітів */}
-          <div className={CARD}>
-            <div className="flex items-center gap-1">
-              <p className="text-sm font-semibold text-foreground">
-                Кількість комітів розробників за останні 7 днів
-              </p>
-
-              <InfoTooltip text="Загальна кількість комітів у відкритих GitHub-репозиторіях криптовалютних проєктів за кожен день.
-              Висока активність розробників може бути випереджальним сигналом для крипто-активів." />
-            </div>
-            {isLoading ? (
-              <Skeleton className="h-40 w-full" />
-            ) : (data?.charts.github_activity ?? []).length > 0 ? (
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={data!.charts.github_activity} margin={{ top: 5, right: 10, bottom: 5, left: 25 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 10 }}
-                    tickFormatter={(v: string) => v.slice(5)}
-                    label={{
-                      value: "Дата",
-                      position: "insideBottomRight",
-                      offset: -5,
-                      style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
-                    }}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 10 }}
-                    width={30}
-                    label={{
-                      value: "Коміти",
-                      angle: -90,
-                      offset: -5,
-                      position: "insideLeft",
-                      style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Tooltip
-                    labelFormatter={(l) => `Дата: ${l}`}
-                    formatter={(v: number) => [v, "Коміти"]}
-                    contentStyle={{ fontSize: 11, borderRadius: 8 }}
-                  />
-                  <Bar dataKey="commits" name="Коміти" fill="#a855f7" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">Дані тимчасово недоступні</p>
-            )}
+        {/* GitHub-активність - горизонтальний барчарт */}
+        <div className={CARD}>
+          <div className="flex items-center gap-1">
+            <p className="text-sm font-semibold text-foreground">
+              Активність розробників за останній місяць
+            </p>
+            <InfoTooltip text="Кількість комітів у GitHub-репозиторіях криптовалютних проєктів за останній місяць. Дані оновлюються при аналізі активу." />
           </div>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Показує поточну кількість комітів за останній місяць для кожного проаналізованого крипто-активу.
+          </p>
+          {isLoading ? (
+            <Skeleton className="h-40 w-full" />
+          ) : (data?.charts.github_activity ?? []).length > 0 ? (
+            <ResponsiveContainer
+              width="100%"
+              height={Math.max(120, (data!.charts.github_activity.length * 40))}
+            >
+              <BarChart
+                data={data!.charts.github_activity}
+                layout="vertical"
+                margin={{ top: 5, right: 40, bottom: 5, left: 60 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border))"
+                  horizontal={false}
+                />
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 10 }}
+                  tickFormatter={(v: number) => v.toLocaleString()}
+                  label={{
+                    value: "Коміти за місяць",
+                    position: "insideBottomRight",
+                    offset: -5,
+                    style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
+                  }}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="ticker"
+                  tick={{ fontSize: 11, fontWeight: 600 }}
+                  width={55}
+                />
+                <Tooltip
+                  formatter={(v: number) => [v.toLocaleString(), "Комітів за місяць"]}
+                  contentStyle={{ fontSize: 11, borderRadius: 8 }}
+                />
+                <Bar
+                  dataKey="commits_last_month"
+                  name="Комітів за місяць"
+                  fill="#a855f7"
+                  radius={[0, 4, 4, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Дані тимчасово недоступні
+            </p>
+          )}
+        </div>
 
           {/* Топ-5 за GitHub */}
           <div className={CARD}>

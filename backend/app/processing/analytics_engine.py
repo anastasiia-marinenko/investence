@@ -185,29 +185,34 @@ class AnalyticsEngine:
 
     def _get_github_activity_by_day(self, db: Session, days: int = 7) -> list[dict]:
         """
-        Повертає активність комітів по криптовалютних активах по днях.
-        Використовує recorded_at як дату запису.
+        Повертає загальну кількість комітів по всіх крипто-активах.
+        Оскільки GitHub API не надає історичних даних по днях,
+        відображає поточне значення commits_last_month для кожного активу.
         """
-        cutoff = datetime.utcnow() - timedelta(days=days)
-
-        stats = db.query(GitHubStats).filter(
-            GitHubStats.recorded_at >= cutoff
+        assets = db.query(Asset).filter(
+            Asset.asset_type == "crypto"
         ).all()
 
-        daily_commits = {}
-        for stat in stats:
-            date_str = stat.recorded_at.strftime("%Y-%m-%d")
-            daily_commits[date_str] = daily_commits.get(date_str, 0) + \
-                (stat.commits_last_month or 0)
-
         result = []
-        for i in range(days - 1, -1, -1):
-            date = (datetime.utcnow() - timedelta(days=i)).strftime("%Y-%m-%d")
+        for asset in assets:
+            latest_stats = db.query(GitHubStats).filter(
+                GitHubStats.asset_id == asset.id
+            ).order_by(GitHubStats.recorded_at.desc()).all()
+
+            if not latest_stats:
+                continue
+
+            total_commits = sum(s.commits_last_month or 0 for s in latest_stats)
+            total_stars = sum(s.stars or 0 for s in latest_stats)
+
             result.append({
-                "date": date,
-                "commits": daily_commits.get(date, 0),
+                "ticker": asset.ticker,
+                "name": asset.name,
+                "commits_last_month": total_commits,
+                "total_stars": total_stars,
             })
 
+        result.sort(key=lambda x: x["commits_last_month"], reverse=True)
         return result
 
     def _get_top5_by_sentiment(self, db: Session) -> list[dict]:
