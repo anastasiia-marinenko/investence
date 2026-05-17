@@ -1,3 +1,5 @@
+const API_BASE = import.meta.env.VITE_API_URL;
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -33,7 +35,9 @@ export default function Dashboard() {
   const ticker = params.ticker?.toUpperCase() || "AAPL";
 
   const downloadCsv = async () => {
-    const response = await fetch(`/api/export/${ticker}?days=30`);
+    const response = await fetch(
+      `${API_BASE}/api/export/${ticker}?days=30`
+    );
 
     const blob = await response.blob();
 
