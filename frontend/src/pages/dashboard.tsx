@@ -31,6 +31,25 @@ const CARD = "bg-card rounded-xl border border-border shadow-sm p-5 space-y-4";
 export default function Dashboard() {
   const params = useParams<{ ticker: string }>();
   const ticker = params.ticker?.toUpperCase() || "AAPL";
+
+  const downloadCsv = async () => {
+    const response = await fetch(`/api/export/${ticker}?days=30`);
+
+    const blob = await response.blob();
+
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${ticker}.csv`;
+
+    document.body.appendChild(a);
+    a.click();
+
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
   const { settings, formatPrice } = useSettings(); 
   const [period, setPeriod] = useState<"7" | "14" | "30">(settings.period as "7" | "14" | "30");
   useEffect(() => {
@@ -141,13 +160,12 @@ export default function Dashboard() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isLoading ? "animate-spin" : ""}><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                 {isLoading ? "Оновлення…" : "Оновити"}
               </button>
-              <a
-                href={`/api/export/${ticker}?days=30`}
-                download
-                className="border border-border rounded-lg px-3 py-1.5 text-xs hover:bg-accent transition-colors"
-              >
-                Експорт CSV
-              </a>
+              <button
+              onClick={downloadCsv}
+              className="border border-border rounded-lg px-3 py-1.5 text-xs hover:bg-accent transition-colors"
+            >
+              Експорт CSV
+            </button>
             </div>
           </div>
         </div>
