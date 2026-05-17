@@ -8,6 +8,7 @@ import {
 import Layout from "@/components/Layout";
 import { apiFetch, type DashboardData } from "@/lib/api";
 import { useSettings } from "@/context/SettingsContext";
+import InfoTooltip from "@/components/ui/info-tooltip";
 
 function SentimentBadge({ s }: { s: string }) {
   if (s === "positive") return <span className="wf-badge-positive">Позитивний</span>;
@@ -30,7 +31,7 @@ const CARD = "bg-card rounded-xl border border-border shadow-sm p-5 space-y-4";
 export default function Dashboard() {
   const params = useParams<{ ticker: string }>();
   const ticker = params.ticker?.toUpperCase() || "AAPL";
-  const { settings, formatPrice } = useSettings();  // додай formatPrice
+  const { settings, formatPrice } = useSettings(); 
   const [period, setPeriod] = useState<"7" | "14" | "30">(settings.period as "7" | "14" | "30");
   useEffect(() => {
    setPeriod(settings.period as "7" | "14" | "30");
@@ -90,17 +91,27 @@ export default function Dashboard() {
                   </h1>
                   <div className="flex items-center gap-4 mt-1.5 text-sm flex-wrap">
                     {data!.current_price != null && (
-                      <span className="font-mono font-semibold text-base">
-                        {formatPrice(data!.current_price)}
-                      </span>
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono font-semibold text-base">
+                            {formatPrice(data!.current_price)}
+                          </span>
+
+                          <InfoTooltip text={`Поточна ринкова ціна активу у валюті ${data?.currency || "USD"}.`} />
+                        </div>
                     )}
                     {data!.daily_change != null && (
-                      <span
-                        className={`font-mono font-medium ${data!.daily_change >= 0 ? "text-green-600" : "text-red-600"}`}
-                      >
-                        {data!.daily_change >= 0 ? "+" : ""}
-                        {data!.daily_change.toFixed(2)}%
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span
+                          className={`font-mono font-medium ${
+                            data!.daily_change >= 0 ? "text-green-600" : "text-red-600"
+                          }`}
+                        >
+                          {data!.daily_change >= 0 ? "+" : ""}
+                          {data!.daily_change.toFixed(2)}%
+                        </span>
+
+                        <InfoTooltip text="Відсоткова зміна ціни активу відносно попередньої торгової сесії." />
+                      </div>
                     )}
                     <span className="text-xs text-muted-foreground">
                       {(() => {
@@ -144,7 +155,10 @@ export default function Dashboard() {
         {/* Price Chart */}
         <div className={CARD}>
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <p className="text-base font-semibold">Динаміка зміни ціни активу за {PERIOD_LABELS[period]}</p>
+            <p className="text-base font-semibold flex items-center">
+              Динаміка зміни ціни активу за {PERIOD_LABELS[period]}
+              <InfoTooltip text="Графік показує зміну вартості активу за вибраний період часу." />
+            </p>
             <div className="flex gap-1">
               {(["7", "14", "30"] as const).map((p) => (
                 <button
@@ -169,7 +183,7 @@ export default function Dashboard() {
             </p>
           ) : priceChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={180}>
-              <AreaChart data={priceChartData} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
+              <AreaChart data={priceChartData} margin={{ top: 5, right: 10, bottom: 25, left: 10 }}>
                 <defs>
                   <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.15} />
@@ -177,13 +191,35 @@ export default function Dashboard() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
-                <YAxis domain={["auto", "auto"]} tick={{ fontSize: 11 }} width={60} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11 }}
+                  interval="preserveStartEnd"
+                  label={{
+                    value: "Дата",
+                    position: "insideBottomRight",
+                    offset: -5,
+                    style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
+                  }}
+                />
+                <YAxis
+                  domain={["auto", "auto"]}
+                  tick={{ fontSize: 11 }}
+                  width={60}
+                  label={{
+                    value: `Ціна (${data?.currency || "USD"})`,
+                    angle: -90,
+                    position: "insideLeft",
+                    offset: 10,
+                    style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
+                  }}
+                />
                 <Tooltip
                   formatter={(v: number) => [formatPrice(v), "Ціна"]}
                   labelFormatter={(l) => `Дата: ${l}`}
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
                 />
+                <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 11 }} />
                 <Area
                   type="monotone"
                   dataKey="price"
@@ -191,6 +227,7 @@ export default function Dashboard() {
                   fill="url(#priceGrad)"
                   strokeWidth={2}
                   dot={false}
+                  name="Ціна активу"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -201,7 +238,10 @@ export default function Dashboard() {
         <div className={CARD}>
           <div className="flex items-start justify-between flex-wrap gap-3">
             <div>
-              <p className="text-base font-semibold mb-2">Аналіз новин та ринкового настрою</p>
+              <p className="text-base font-semibold mb-2 flex items-center">
+                Аналіз новин та ринкового настрою
+                <InfoTooltip text="Оцінка настрою новин знаходиться в діапазоні від -1.00 (негативний) до +1.00 (позитивний). Значення вище +0.20 вказують на позитивний ринковий настрій, нижче -0.20 – на негативний." />
+              </p>
               {isLoading ? (
                 <Skeleton className="h-8 w-40" />
               ) : (
@@ -218,7 +258,10 @@ export default function Dashboard() {
                     {(data?.news?.avg_sentiment ?? 0) > 0 ? "+" : ""}
                     {(data?.news?.avg_sentiment ?? 0).toFixed(2)}
                   </span>
-                  <SentimentBadge s={data?.news?.sentiment_label || "neutral"} />
+                  <div className="flex items-center gap-1">
+                    <SentimentBadge s={data?.news?.sentiment_label || "neutral"} />
+                    <InfoTooltip text="Класифікація базується на середньому значенні тональності новин." />
+                  </div>
                   <span className="text-xs text-muted-foreground">Загальна оцінка настрою</span>
                 </div>
               )}
@@ -297,6 +340,8 @@ export default function Dashboard() {
                       {n.sentiment_score > 0 ? "+" : ""}
                       {n.sentiment_score.toFixed(2)}
                     </span>
+
+                      <InfoTooltip text="Оцінка тональності конкретної новини: від -1 (негативна) до +1 (позитивна)." />
                   </div>
                 </div>
               ))}
@@ -306,7 +351,10 @@ export default function Dashboard() {
 
         {/* Correlation */}
         <div className={CARD}>
-          <p className="text-base font-semibold">Взаємозв’язок новинного настрою та зміни ціни</p>
+          <p className="text-base font-semibold flex items-center">
+            Взаємозв’язок новинного настрою та зміни ціни
+            <InfoTooltip text="Коефіцієнт кореляції Пірсона показує силу зв'язку між новинним настроєм та зміною ціни активу. Значення близькі до +1 означають сильний позитивний зв'язок, близькі до -1 – негативний." />
+          </p>
           {isLoading ? (
             <Skeleton className="h-36 w-full" />
           ) : data?.correlation.chart_data && data.correlation.chart_data.length > 0 ? (
@@ -314,12 +362,43 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height={160}>
                 <ComposedChart
                   data={data.correlation.chart_data}
-                  margin={{ top: 5, right: 10, bottom: 5, left: 5 }}
+                  margin={{ top: 5, right: 10, bottom: 25, left: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-                  <YAxis yAxisId="left" tick={{ fontSize: 10 }} width={40} />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} width={40} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10 }}
+                    interval="preserveStartEnd"
+                    label={{
+                      value: "Дата",
+                      position: "insideBottomRight",
+                      offset: -5,
+                      style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
+                    }}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    tick={{ fontSize: 10 }}
+                    width={40}
+                    label={{
+                      value: "Настрій",
+                      angle: -90,
+                      position: "insideLeft",
+                      style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
+                    }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fontSize: 10 }}
+                    width={40}
+                    label={{
+                      value: "Зміна ціни %",
+                      angle: 90,
+                      position: "insideRight",
+                      style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
+                    }}
+                  />
                   <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8 }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Bar
@@ -342,7 +421,12 @@ export default function Dashboard() {
               </ResponsiveContainer>
               <div className="flex items-center gap-4 text-sm flex-wrap">
                 <div>
-                  <span className="text-muted-foreground">Коефіцієнт кореляції (Пірсон): </span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-muted-foreground">
+                      Коефіцієнт кореляції (Пірсон):
+                    </span>
+                    <InfoTooltip text="Статистичний показник сили взаємозв’язку між двома величинами." />
+                  </div>
                   <span className="font-mono font-semibold">
                     {data.correlation.coefficient != null
                       ? `${data.correlation.coefficient > 0 ? "+" : ""}${data.correlation.coefficient.toFixed(2)}`
@@ -373,7 +457,10 @@ export default function Dashboard() {
         {/* GitHub */}
         {!isLoading && (
           <div className={CARD}>
-            <p className="text-base font-semibold">Активність розробників у GitHub-репозиторіях</p>
+            <p className="text-base font-semibold flex items-center">
+              Активність розробників у GitHub-репозиторіях
+              <InfoTooltip text="Показує активність розробників криптопроєкту: кількість зірок, форків, відкритих issues та загальну активність репозиторію." />
+            </p>
             {!data?.is_crypto ? (
               <p className="text-sm text-muted-foreground text-center py-4">
                 Аналіз активності розробників доступний лише для криптовалютних активів.
@@ -394,10 +481,23 @@ export default function Dashboard() {
                   >
                     <span className="text-sm font-mono font-medium text-primary">{r.repo_name}</span>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>⭐ {r.stars.toLocaleString()}</span>
-                      <span>Форки: {r.forks.toLocaleString()}</span>
-                      <span>Issues: {r.open_issues}</span>
-                      <ActivityBadge a={r.activity} />
+                      <div className="flex items-center gap-1">
+                        <span>⭐ {r.stars.toLocaleString()}</span>
+                        <InfoTooltip text="Кількість користувачів, які позначили репозиторій як цікавий." />
+                      </div>
+                     <div className="flex items-center gap-1">
+                        <span>Форки: {r.forks.toLocaleString()}</span>
+                        <InfoTooltip text="Форк – копія репозиторію для окремої розробки або модифікації проєкту." />
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <span>Issues: {r.open_issues}</span>
+                        <InfoTooltip text="Issues – відкриті задачі, помилки або обговорення в репозиторії." />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <ActivityBadge a={r.activity} />
+                        <InfoTooltip text="Активність визначається за кількістю комітів, issues, форків та популярністю репозиторію." />
+                      </div>
                     </div>
                   </a>
                 ))}
@@ -408,7 +508,10 @@ export default function Dashboard() {
 
         {/* AI Report */}
         <div className={CARD}>
-          <p className="text-base font-semibold">Аналітичний звіт</p>
+          <p className="text-base font-semibold flex items-center">
+            Аналітичний звіт
+            <InfoTooltip text="Автоматично сформований підсумок на основі ринкових даних, новин та аналітики. Не є фінансовою рекомендацією." />
+          </p>
           {isLoading ? (
             <div className="space-y-2 animate-pulse">
               <div className="bg-muted h-4 rounded-lg w-full" />

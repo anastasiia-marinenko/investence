@@ -1,11 +1,13 @@
 /**
  * Сторінка детальної інформації про актив (/asset/:ticker/info).
  */
+import type { ReactNode } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
 import { apiFetch } from "@/lib/api";
 import { useSettings } from "@/context/SettingsContext";
+import InfoTooltip from "@/components/ui/info-tooltip";
 interface AssetInfoData {
   ticker: string;
   name: string;
@@ -29,15 +31,20 @@ function Row({
   value,
   valueClass,
 }: {
-  label: string;
+  label: ReactNode;
   value: string | number | null | undefined;
   valueClass?: string;
 }) {
   if (value == null || value === "") return null;
   return (
     <div className="flex justify-between py-2.5 border-b border-border/50 text-sm last:border-0">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={`font-mono ${valueClass ?? ""}`}>{value}</span>
+      <div className="text-muted-foreground">
+        {label}
+      </div>
+
+      <span className={`font-mono ${valueClass ?? ""}`}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -103,11 +110,25 @@ export default function AssetInfo() {
               {/* Основні показники */}
               <div>
                 <Row
-                  label="Поточна ціна"
-                  value={data?.current_price != null ? formatPrice(data.current_price) : undefined}
+                  label={
+                    <div className="flex items-center gap-1">
+                      <span>Поточна ціна</span>
+
+                      <InfoTooltip text="Актуальна ринкова ціна активу." />
+                    </div>
+                  }
+                  value={data?.current_price != null
+                    ? formatPrice(data.current_price)
+                    : undefined}
                 />
                 <Row
-                  label="Зміна за день"
+                  label={
+                    <div className="flex items-center gap-1">
+                      <span>Зміна за день</span>
+
+                      <InfoTooltip text="Відсоткова зміна ціни активу за останні 24 години." />
+                    </div>
+                  }
                   value={data?.daily_change != null
                     ? `${data.daily_change >= 0 ? "+" : ""}${data.daily_change.toFixed(2)}%`
                     : undefined}
@@ -115,26 +136,86 @@ export default function AssetInfo() {
                     ? data.daily_change >= 0 ? "text-green-600" : "text-red-600"
                     : ""}
                 />
-                <Row label="Ринкова капіталізація" value={data?.market_cap} />
-                <Row label="Обсяг торгів" value={data?.volume} />
+                <Row
+                  label={
+                    <div className="flex items-center gap-1">
+                      <span>Ринкова капіталізація</span>
+
+                      <InfoTooltip text="Загальна ринкова вартість активу або компанії." />
+                    </div>
+                  }
+                  value={data?.market_cap}
+                />
+                <Row
+                  label={
+                    <div className="flex items-center gap-1">
+                      <span>Обсяг торгів</span>
+
+                      <InfoTooltip text="Сумарний обсяг купівлі та продажу активу за останній торговий період." />
+                    </div>
+                  }
+                  value={data?.volume}
+                />
                 {!data?.is_crypto && (
                   <Row
-                    label="Коефіцієнт P/E"
-                    value={data?.pe_ratio != null
-                      ? data.pe_ratio.toFixed(2)
-                      : undefined}
+                  label={
+                    <div className="flex items-center gap-1">
+                      <span>Коефіцієнт P/E</span>
+
+                      <InfoTooltip text="Співвідношення ціни акції до прибутку компанії на одну акцію." />
+                    </div>
+                  }
+                  value={data?.pe_ratio != null
+                    ? data.pe_ratio.toFixed(2)
+                    : undefined}
+                />
+                )}
+                <Row
+                  label={
+                    <div className="flex items-center gap-1">
+                      <span>Максимум за 52 тижні</span>
+
+                      <InfoTooltip text="Найвища ціна активу за останній рік." />
+                    </div>
+                  }
+                  value={data?.week_high_52 != null
+                    ? formatPrice(data.week_high_52)
+                    : undefined}
+                />
+                <Row
+                  label={
+                    <div className="flex items-center gap-1">
+                      <span>Мінімум за 52 тижні</span>
+
+                      <InfoTooltip text="Найнижча ціна активу за останній рік." />
+                    </div>
+                  }
+                  value={data?.week_low_52 != null
+                    ? formatPrice(data.week_low_52)
+                    : undefined}
+                />
+                {data?.sector && (
+                  <Row
+                    label={
+                      <div className="flex items-center gap-1">
+                        <span>Сектор</span>
+
+                        <InfoTooltip text="Галузь економіки, до якої належить компанія." />
+                      </div>
+                    }
+                    value={data.sector}
                   />
                 )}
                 <Row
-                  label="Максимум за 52 тижні"
-                  value={data?.week_high_52 != null ? formatPrice(data.week_high_52) : undefined}
-                />
-                <Row
-                  label="Мінімум за 52 тижні"
-                  value={data?.week_low_52 != null ? formatPrice(data.week_low_52) : undefined}
-                />
-                {data?.sector && <Row label="Сектор" value={data.sector} />}
-                <Row label="Валюта" value={data?.currency || "USD"} />
+                label={
+                  <div className="flex items-center gap-1">
+                    <span>Валюта</span>
+
+                    <InfoTooltip text="Основна валюта, у якій торгується актив." />
+                  </div>
+                }
+                value={data?.currency || "USD"}
+              />
               </div>
 
               {/* Опис */}

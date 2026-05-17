@@ -6,6 +6,7 @@ import {
 import Layout from "@/components/Layout";
 import { apiFetch, type DashboardData } from "@/lib/api";
 import { useSettings } from "@/context/SettingsContext";
+import InfoTooltip from "@/components/ui/info-tooltip";
 
 function SentimentBadge({ s }: { s: string }) {
   if (s === "positive") return <span className="wf-badge-positive">Позитивний</span>;
@@ -17,7 +18,13 @@ function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`bg-muted animate-pulse rounded-lg ${className}`} />;
 }
 
-function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
+function InfoRow({
+  label,
+  children,
+}: {
+  label: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex justify-between items-center py-1.5 border-b border-border/50 text-sm last:border-0">
       <span className="text-muted-foreground">{label}</span>
@@ -149,20 +156,47 @@ export default function Compare() {
         {submitted && (
           <>
             <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-3">
-              <p className="text-sm font-semibold text-foreground">
+              <p className="text-sm font-semibold text-foreground flex items-center gap-1">
                 Порівняння зміни цін активів за останні 30 днів (%)
+                <InfoTooltip text="Графік відображає відсоткову зміну ціни активів відносно першого дня періоду." />
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Графік показує відсоткову зміну ціни відносно початку обраного періоду.
+                Це дозволяє порівнювати активи з різними ціновими діапазонами.
               </p>
               {queryA.isLoading || queryB.isLoading ? (
                 <Skeleton className="h-44 w-full" />
               ) : priceChart.length > 0 ? (
+                <>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span>Легенда показує динаміку зміни ціни для кожного активу.</span>
+                    <InfoTooltip text="Кожна лінія відповідає окремому активу, вибраному для порівняння." />
+                  </div>
+                
                 <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={priceChart} margin={{ top: 5, right: 10, bottom: 5, left: 5 }}>
+                  <LineChart data={priceChart} margin={{ top: 5, right: 10, bottom: 25, left: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 10 }}
+                      interval="preserveStartEnd"
+                      label={{
+                        value: "Дата",
+                        position: "insideBottomRight",
+                        offset: -5,
+                        style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
+                      }}
+                    />
                     <YAxis
                       tick={{ fontSize: 10 }}
                       width={50}
                       tickFormatter={(v: number) => `${v.toFixed(1)}%`}
+                      label={{
+                        value: "Зміна ціни %",
+                        angle: -90,
+                        position: "insideLeft",
+                        style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
+                      }}
                     />
                     <Tooltip
                       formatter={(v: number) => [`${v.toFixed(2)}%`, ""]}
@@ -174,6 +208,7 @@ export default function Compare() {
                         type="monotone"
                         dataKey={A.ticker}
                         stroke="hsl(var(--primary))"
+                        name={A.ticker}
                         dot={false}
                         strokeWidth={2}
                         connectNulls
@@ -184,6 +219,7 @@ export default function Compare() {
                         type="monotone"
                         dataKey={B.ticker}
                         stroke="#f97316"
+                        name={B.ticker}
                         dot={false}
                         strokeWidth={2}
                         connectNulls
@@ -191,6 +227,7 @@ export default function Compare() {
                     )}
                   </LineChart>
                 </ResponsiveContainer>
+                </>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-6">
                   Немає даних про ціни
@@ -231,10 +268,17 @@ export default function Compare() {
                               <span className={`font-mono ${(q.data.daily_change ?? 0) >= 0 ? "text-green-600" : "text-red-600"}`}>
                                 {q.data.daily_change != null
                                   ? `${q.data.daily_change >= 0 ? "+" : ""}${q.data.daily_change.toFixed(2)}%`
-                                  : "—"}
+                                  : "–"}
                               </span>
                             </InfoRow>
-                            <InfoRow label="Оцінка настрою">
+                            <InfoRow
+                                label={
+                                  <div className="flex items-center gap-1">
+                                    <span>Оцінка настрою</span>
+                                    <InfoTooltip text="Середнє значення тональності новин у діапазоні від -1 до +1." />
+                                  </div>
+                                }
+                              >
                               <span className={`font-mono font-semibold ${
                                 q.data.news.avg_sentiment > 0.2 ? "text-green-600"
                                 : q.data.news.avg_sentiment < -0.2 ? "text-red-600" : ""
@@ -243,13 +287,34 @@ export default function Compare() {
                                 {q.data.news.avg_sentiment.toFixed(2)}
                               </span>
                             </InfoRow>
-                            <InfoRow label="Тональність">
+                            <InfoRow
+                                label={
+                                  <div className="flex items-center gap-1">
+                                    <span>Тональність</span>
+                                    <InfoTooltip text="Загальна класифікація новинного настрою: позитивний, нейтральний або негативний." />
+                                  </div>
+                                }
+                              >
                               <SentimentBadge s={q.data.news.sentiment_label} />
                             </InfoRow>
-                            <InfoRow label="Кількість новин">
+                            <InfoRow
+                                label={
+                                  <div className="flex items-center gap-1">
+                                    <span>Кількість новин</span>
+                                    <InfoTooltip text="Кількість новин, використаних для аналізу ринкового настрою." />
+                                  </div>
+                                }
+                              >
                               <span>{q.data.news.count}</span>
                             </InfoRow>
-                            <InfoRow label="Кореляція">
+                            <InfoRow
+                                label={
+                                  <div className="flex items-center gap-1">
+                                    <span>Кореляція</span>
+                                    <InfoTooltip text="Показує силу взаємозв’язку між новинним настроєм та зміною ціни активу." />
+                                  </div>
+                                }
+                              >
                               <span className="text-xs text-muted-foreground text-right max-w-[60%]">
                                 {q.data.correlation.label}
                               </span>

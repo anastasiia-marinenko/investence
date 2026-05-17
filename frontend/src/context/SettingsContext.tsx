@@ -22,7 +22,7 @@ const Ctx = createContext<SettingsCtx>({
   settings: defaults,
   save: () => {},
   reset: () => {},
-  formatPrice: (v) => (v != null ? `$${v.toFixed(2)}` : "—"),
+  formatPrice: (v) => (v != null ? `$${v.toFixed(2)}` : "–"),
 });
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
@@ -46,7 +46,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const reset = () => setSettings(defaults);
 
   function formatPrice(usd: number | null | undefined, decimals = 2): string {
-    if (usd == null) return "—";
+    if (usd == null) return "–";
 
     const rate = RATES[settings.currency] ?? 1;
     const val = usd * rate;

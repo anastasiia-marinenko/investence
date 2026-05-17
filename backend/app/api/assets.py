@@ -719,7 +719,7 @@ def get_asset_info(ticker: str, db: Session = Depends(get_db)):
                             week_high_52 = round(max(cg_price, price_1y_ago), 2)
 
                         # low: min(ціна зараз, рік тому)
-                        # ATL для BTC це $67 з 2013 — не підходить для 52-week low
+                        # ATL для BTC це $67 з 2013 – не підходить для 52-week low
                         week_low_52 = round(min(cg_price, price_1y_ago), 2)
 
                     # sector
@@ -1051,7 +1051,7 @@ def get_history(db: Session = Depends(get_db)):
         "assets": result,
     }
 
-# clear_history — просто ховає
+# clear_history – просто ховає
 @router.delete("")
 def clear_history(db: Session = Depends(get_db)):
     """

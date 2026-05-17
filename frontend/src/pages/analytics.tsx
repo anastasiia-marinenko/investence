@@ -2,6 +2,7 @@
  * Сторінка загальної аналітики (/analytics).
  * Відображає зведену статистику, діаграми та топ-5 таблиці.
  */
+import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import {
@@ -12,6 +13,7 @@ import {
 import Layout from "@/components/Layout";
 import { apiFetch } from "@/lib/api";
 import { useSettings } from "@/context/SettingsContext";
+import InfoTooltip from "@/components/ui/info-tooltip";
 
 // Тип відповіді бекенду
 
@@ -96,28 +98,49 @@ export default function Analytics() {
 
   const totalSentNews = data?.sentiment_distribution.total ?? 0;
 
+  type StatCard = {
+    id: string;
+    label: ReactNode;
+    value: string;
+    color: string;
+  };
+
   // Картки зведеної статистики
-  const statCards = [
+  const statCards: StatCard[] = [
     {
+      id: "total_assets",
       label: "Проаналізовано активів",
       value: String(data?.summary.total_assets ?? 0),
       color: "",
     },
     {
+      id: "total_news",
       label: "Всього новин",
       value: String(data?.summary.total_news ?? 0),
       color: "",
     },
     {
-      label: "Середня оцінка тональності",
+      id: "avg_sentiment",
+      label: (
+        <div className="flex items-center gap-1">
+          <span>Середня оцінка тональності</span>
+          <InfoTooltip text="Середнє значення тональності всіх проаналізованих новин у діапазоні від -1 до +1." />
+        </div>
+      ),
       value: data?.summary.avg_sentiment != null
         ? `${data.summary.avg_sentiment > 0 ? "+" : ""}${data.summary.avg_sentiment.toFixed(2)}`
-        : "—",
+        : "–",
       color: sentimentColor(data?.summary.avg_sentiment ?? null),
     },
     {
-      label: "Настрій ринку",
-      value: data?.summary.market_sentiment ?? "—",
+      id: "market_sentiment",
+      label: (
+        <div className="flex items-center gap-1">
+          <span>Настрій ринку</span>
+          <InfoTooltip text="Загальна оцінка ринкової тональності на основі проаналізованих новин." />
+        </div>
+      ),
+      value: data?.summary.market_sentiment ?? "–",
       color: data?.summary.market_sentiment === "Позитивний"
         ? "text-green-600"
         : data?.summary.market_sentiment === "Негативний"
@@ -125,14 +148,26 @@ export default function Analytics() {
         : "text-gray-500",
     },
     {
-      label: "Середня цінова зміна за день",
+      id: "avg_price_change",
+      label: (
+        <div className="flex items-center gap-1">
+          <span>Середня цінова зміна за день</span>
+          <InfoTooltip text="Середня відсоткова зміна ціни всіх активів за останню добу." />
+        </div>
+      ),
       value: data?.summary.avg_price_change != null
         ? `${data.summary.avg_price_change >= 0 ? "+" : ""}${data.summary.avg_price_change.toFixed(2)}%`
-        : "—",
+        : "–",
       color: (data?.summary.avg_price_change ?? 0) >= 0 ? "text-green-600" : "text-red-600",
     },
     {
-      label: "Активність розробників",
+      id: "developer_activity",
+      label: (
+        <div className="flex items-center gap-1">
+          <span>Активність розробників</span>
+          <InfoTooltip text="Сумарна кількість комітів у GitHub-репозиторіях криптовалютних проєктів." />
+        </div>
+      ),
       value: String(data?.summary.total_commits ?? 0),
       color: "",
     },
@@ -149,7 +184,7 @@ export default function Analytics() {
         <div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {statCards.map((s) => (
-              <div key={s.label} className="bg-card rounded-xl border border-border shadow-sm p-4 space-y-1">
+              <div key={s.id} className="bg-card rounded-xl border border-border shadow-sm p-4 space-y-1">
                 <p className="text-xs text-muted-foreground leading-snug">{s.label}</p>
                 {isLoading ? (
                   <Skeleton className="h-8 w-3/4" />
@@ -170,15 +205,20 @@ export default function Analytics() {
         <div className="space-y-4">
           {/* Кругова діаграма */}
           <div className={CARD}>
-            <p className="text-sm font-semibold text-foreground">Розподіл новин за тональністю</p>
+            <div className="flex items-center gap-1">
+              <p className="text-sm font-semibold text-foreground">
+                Розподіл новин за тональністю
+              </p>
+              <InfoTooltip text="Показує співвідношення позитивних, негативних та нейтральних новин." />
+            </div>
             {isLoading ? (
               <Skeleton className="h-52 w-full" />
             ) : pieData.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
-                  <Pie data={pieData} cx="38%" cy="50%" outerRadius={85} dataKey="value">
-                    {pieData.map((entry, index) => (
-                      <Cell key={index} fill={entry.color} />
+                  <Pie data={pieData} cx="38%" cy="50%" outerRadius={85} dataKey="value" nameKey="name">
+                    {pieData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -207,18 +247,49 @@ export default function Analytics() {
               <p className="text-sm text-muted-foreground text-center py-8">Дані тимчасово недоступні</p>
             )}
           </div>
+          {pieData.length > 0 && (
+            <p className="text-xs text-muted-foreground text-center mt-1">
+              Розподіл усіх зібраних та проаналізованих новин за тональністю.
+            </p>
+          )}
 
           {/* Стовпчаста діаграма активності новин */}
           <div className={CARD}>
-            <p className="text-sm font-semibold text-foreground">Динаміка кількості новин за останні 7 днів</p>
+            <div className="flex items-center gap-1">
+              <p className="text-sm font-semibold text-foreground">
+                Динаміка кількості новин за останні 7 днів
+              </p>
+
+              <InfoTooltip text="Показує зміну кількості зібраних новин по днях." />
+            </div>
             {isLoading ? (
               <Skeleton className="h-40 w-full" />
             ) : (
               <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={data?.charts.news_activity ?? []} margin={{ top: 5, right: 10, bottom: 5, left: 5 }}>
+                <BarChart data={data?.charts.news_activity ?? []} margin={{ top: 5, right: 10, bottom: 25, left: 25 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-                  <YAxis tick={{ fontSize: 10 }} width={30} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10 }}
+                    tickFormatter={(v: string) => v.slice(5)}
+                    label={{
+                      value: "Дата",
+                      position: "insideBottomRight",
+                      offset: -5,
+                      style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
+                    }}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10 }}
+                    width={30}
+                    label={{
+                      value: "Кількість",
+                      angle: -90,
+                      position: "insideLeft",
+                      style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Tooltip
                     labelFormatter={(l) => `Дата: ${l}`}
                     formatter={(v: number) => [v, "Новин"]}
@@ -232,7 +303,13 @@ export default function Analytics() {
 
           {/* Топ-5 за тональністю */}
           <div className={CARD}>
-            <p className="text-sm font-semibold text-foreground">Топ-5 активів за оцінкою настроїв</p>
+            <div className="flex items-center gap-1">
+              <p className="text-sm font-semibold text-foreground">
+                Топ-5 активів за оцінкою настроїв
+              </p>
+
+              <InfoTooltip text="Рейтинг активів із найвищою середньою позитивною тональністю новин." />
+            </div>
             {isLoading ? (
               <div className="space-y-2">{[1,2,3,4,5].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
             ) : !data?.top5.by_sentiment.length ? (
@@ -246,8 +323,20 @@ export default function Analytics() {
                     <th className="py-2 w-8 text-xs font-medium">#</th>
                     <th className="py-2 text-xs font-medium">Тікер</th>
                     <th className="py-2 text-xs font-medium hidden sm:table-cell">Назва</th>
-                    <th className="py-2 text-xs font-medium text-right">Оцінка</th>
-                    <th className="py-2 text-xs font-medium text-right hidden sm:table-cell">Рівень</th>
+                    <th className="py-2 text-xs font-medium text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Оцінка</span>
+
+                        <InfoTooltip text="Середня оцінка настрою новин для активу у діапазоні від -1 до +1." />
+                      </div>
+                    </th>
+                    <th className="py-2 text-xs font-medium text-right hidden sm:table-cell">
+                    <div className="flex items-center justify-end gap-1">
+                      <span>Рівень оцінки</span>
+
+                      <InfoTooltip text="Візуальне представлення сили позитивної або негативної тональності." />
+                    </div>
+                  </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -261,7 +350,7 @@ export default function Analytics() {
                       <td className={`py-2.5 text-right font-mono font-semibold ${sentimentColor(a.sentiment_score)}`}>
                         {a.sentiment_score != null
                           ? `${a.sentiment_score > 0 ? "+" : ""}${a.sentiment_score.toFixed(2)}`
-                          : "—"}
+                          : "–"}
                       </td>
                       <td className="py-2.5 text-right hidden sm:table-cell">
                         <div className="flex justify-end">
@@ -280,15 +369,46 @@ export default function Analytics() {
         <div className="space-y-4">
           {/* Лінійний графік цінової зміни */}
           <div className={CARD}>
-            <p className="text-sm font-semibold text-foreground">Середня зміна ціни активів за останні 7 днів</p>
+            <div className="flex items-center gap-1">
+              <p className="text-sm font-semibold text-foreground">
+                Середня зміна ціни активів за останні 7 днів
+              </p>
+
+              <InfoTooltip text="Показує середню відсоткову зміну ціни всіх проаналізованих активів." />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Середня відсоткова зміна ціни по всіх проаналізованих активах за кожен день.
+              Зелені точки – позитивна зміна, червоні – негативна.
+            </p>
             {isLoading ? (
               <Skeleton className="h-40 w-full" />
             ) : (data?.charts.price_activity ?? []).length > 0 ? (
               <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={data!.charts.price_activity} margin={{ top: 5, right: 10, bottom: 5, left: 5 }}>
+                <LineChart data={data!.charts.price_activity} margin={{ top: 5, right: 10, bottom: 25, left: 25 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-                  <YAxis tick={{ fontSize: 10 }} width={45} tickFormatter={(v: number) => `${v.toFixed(1)}%`} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10 }}
+                    tickFormatter={(v: string) => v.slice(5)}
+                    label={{
+                      value: "Дата",
+                      position: "insideBottomRight",
+                      offset: -5,
+                      style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
+                    }}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10 }}
+                    width={45}
+                    tickFormatter={(v: number) => `${v.toFixed(1)}%`}
+                    label={{
+                      value: "Зміна %",
+                      angle: -90,
+                      position: "insideLeft",
+                      style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Tooltip
                     labelFormatter={(l) => `Дата: ${l}`}
                     formatter={(v: number) => [`${v.toFixed(2)}%`, "Середня зміна"]}
@@ -297,7 +417,7 @@ export default function Analytics() {
                   <Line
                     type="monotone"
                     dataKey="avg_change_pct"
-                    name="Середня зміна %"
+                    name="Середня зміна ціни %"
                     stroke="#f97316"
                     strokeWidth={2}
                     dot={(props) => {
@@ -329,9 +449,27 @@ export default function Analytics() {
                     <th className="py-2 w-8 text-xs font-medium">#</th>
                     <th className="py-2 text-xs font-medium">Тікер</th>
                     <th className="py-2 text-xs font-medium hidden sm:table-cell">Назва</th>
-                    <th className="py-2 text-xs font-medium text-right">Ціна</th>
-                    <th className="py-2 text-xs font-medium text-right">Зміна за день</th>
-                    <th className="py-2 text-xs font-medium text-right hidden md:table-cell">Зміна за 30 днів</th>
+                    <th className="py-2 text-xs font-medium text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Ціна</span>
+
+                        <InfoTooltip text="Поточна ринкова ціна активу." />
+                      </div>
+                    </th>
+                    <th className="py-2 text-xs font-medium text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Зміна за день</span>
+
+                        <InfoTooltip text="Відсоткова зміна ціни активу за останні 24 години." />
+                      </div>
+                    </th>
+                    <th className="py-2 text-xs font-medium text-right hidden md:table-cell">
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Зміна за 30 днів</span>
+
+                        <InfoTooltip text="Відсоткова зміна ціни активу за останні 30 днів." />
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -350,14 +488,14 @@ export default function Analytics() {
                       }`}>
                         {a.change_day_pct != null
                           ? `${a.change_day_pct >= 0 ? "+" : ""}${a.change_day_pct.toFixed(2)}%`
-                          : "—"}
+                          : "–"}
                       </td>
                       <td className={`py-2.5 text-right font-mono hidden md:table-cell ${
                         (a.change_30d_pct ?? 0) >= 0 ? "text-green-600" : "text-red-600"
                       }`}>
                         {a.change_30d_pct != null
                           ? `${a.change_30d_pct >= 0 ? "+" : ""}${a.change_30d_pct.toFixed(2)}%`
-                          : "—"}
+                          : "–"}
                       </td>
                     </tr>
                   ))}
@@ -371,15 +509,45 @@ export default function Analytics() {
         <div className="space-y-4">
           {/* Стовпчаста діаграма комітів */}
           <div className={CARD}>
-            <p className="text-sm font-semibold text-foreground">Кількість комітів розробників за останні 7 днів</p>
+            <div className="flex items-center gap-1">
+              <p className="text-sm font-semibold text-foreground">
+                Кількість комітів розробників за останні 7 днів
+              </p>
+
+              <InfoTooltip text="Показує активність розробників у GitHub-репозиторіях криптовалютних проєктів." />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Загальна кількість комітів у відкритих репозиторіях криптовалютних проєктів за кожен день.
+              Висока активність розробників може бути випереджальним сигналом для крипто-активів.
+            </p>
             {isLoading ? (
               <Skeleton className="h-40 w-full" />
             ) : (data?.charts.github_activity ?? []).length > 0 ? (
               <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={data!.charts.github_activity} margin={{ top: 5, right: 10, bottom: 5, left: 5 }}>
+                <BarChart data={data!.charts.github_activity} margin={{ top: 5, right: 10, bottom: 25, left: 25 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-                  <YAxis tick={{ fontSize: 10 }} width={30} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10 }}
+                    tickFormatter={(v: string) => v.slice(5)}
+                    label={{
+                      value: "Дата",
+                      position: "insideBottomRight",
+                      offset: -5,
+                      style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
+                    }}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10 }}
+                    width={30}
+                    label={{
+                      value: "Коміти",
+                      angle: -90,
+                      position: "insideLeft",
+                      style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Tooltip
                     labelFormatter={(l) => `Дата: ${l}`}
                     formatter={(v: number) => [v, "Коміти"]}
@@ -395,7 +563,13 @@ export default function Analytics() {
 
           {/* Топ-5 за GitHub */}
           <div className={CARD}>
-            <p className="text-sm font-semibold text-foreground">Топ-5 активів за активністю розробників</p>
+            <div className="flex items-center gap-1">
+              <p className="text-sm font-semibold text-foreground">
+                Топ-5 активів за активністю розробників
+              </p>
+
+              <InfoTooltip text="Рейтинг криптоактивів за активністю розробників у GitHub." />
+            </div>
             {isLoading ? (
               <div className="space-y-2">{[1,2,3,4,5].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
             ) : !data?.top5.by_github.length ? (
@@ -410,8 +584,20 @@ export default function Analytics() {
                     <th className="py-2 text-xs font-medium">Тікер</th>
                     <th className="py-2 text-xs font-medium hidden sm:table-cell">Назва</th>
                     <th className="py-2 text-xs font-medium text-right">Зірки</th>
-                    <th className="py-2 text-xs font-medium text-right">Коміти/міс</th>
-                    <th className="py-2 text-xs font-medium text-right">Активність</th>
+                    <th className="py-2 text-xs font-medium text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Коміти/міс</span>
+
+                        <InfoTooltip text="Кількість комітів у GitHub-репозиторіях за останній місяць." />
+                      </div>
+                    </th>
+                    <th className="py-2 text-xs font-medium text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <span>Активність</span>
+
+                      <InfoTooltip text="Рівень активності розробників на основі комітів та роботи з репозиторіями." />
+                    </div>
+                  </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -425,15 +611,25 @@ export default function Analytics() {
                       <td className="py-2.5 text-right font-mono">{a.total_stars.toLocaleString()}</td>
                       <td className="py-2.5 text-right font-mono">{a.commits_last_month}</td>
                       <td className="py-2.5 text-right">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${
-                          a.activity_level === "high"
-                            ? "bg-green-50 text-green-700 border-green-200"
-                            : a.activity_level === "medium"
-                            ? "bg-gray-100 text-gray-600 border-gray-200"
-                            : "bg-red-50 text-red-700 border-red-200"
-                        }`}>
-                          {a.activity_level === "high" ? "Висока" : a.activity_level === "medium" ? "Середня" : "Низька"}
-                        </span>
+                        <div className="flex items-center justify-end gap-1">
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full font-medium border ${
+                              a.activity_level === "high"
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : a.activity_level === "medium"
+                                ? "bg-gray-100 text-gray-600 border-gray-200"
+                                : "bg-red-50 text-red-700 border-red-200"
+                            }`}
+                          >
+                            {a.activity_level === "high"
+                              ? "Висока"
+                              : a.activity_level === "medium"
+                              ? "Середня"
+                              : "Низька"}
+                          </span>
+
+                          <InfoTooltip text="Рівень активності визначається за кількістю комітів та активністю розробників у GitHub-репозиторіях." />
+                        </div>
                       </td>
                     </tr>
                   ))}

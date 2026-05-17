@@ -149,7 +149,7 @@ export default function History() {
                     >
                       {a.sentiment_score != null
                         ? `${a.sentiment_score > 0 ? "+" : ""}${a.sentiment_score.toFixed(2)}`
-                        : "—"}
+                        : "–"}
                     </td>
                     <td className="py-2.5 text-right">
                       <SentimentBadge s={a.sentiment_label} />

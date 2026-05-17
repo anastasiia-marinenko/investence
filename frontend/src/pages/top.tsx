@@ -105,7 +105,7 @@ export default function Top() {
                     >
                       {a.daily_change != null
                         ? `${a.daily_change >= 0 ? "+" : ""}${a.daily_change.toFixed(2)}%`
-                        : "—"}
+                        : "–"}
                     </td>
                     <td
                       className={`py-2.5 text-right font-mono font-semibold ${
@@ -118,7 +118,7 @@ export default function Top() {
                     >
                       {a.sentiment_score != null
                         ? `${a.sentiment_score > 0 ? "+" : ""}${a.sentiment_score.toFixed(2)}`
-                        : "—"}
+                        : "–"}
                     </td>
                     <td className="py-2.5 text-right">
                       <SentimentBadge s={a.sentiment_label} />
