@@ -59,30 +59,39 @@ export default function History() {
   const [showConfirm, setShowConfirm] = useState(false);
   const qc = useQueryClient();
 
-  const { data = [], isLoading } = useQuery({
-    queryKey: ["history"],
-    queryFn: () =>
-      apiFetch<{ count: number; assets: HistoryItem[] }>("/assets")
-        .then((r) => r.assets),
+const clearMutation = useMutation({
+  mutationFn: async () => {
+    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    const res = await fetch(`${base}/api/assets`, {
+      method: "DELETE",
+    });
 
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    if (!res.ok) {
+      throw new Error("Не вдалося очистити історію");
+    }
 
-    refetchInterval: 5000,
-    refetchIntervalInBackground: true,
-  });
+    return res.json();
+  },
 
-  const clearMutation = useMutation({
-    mutationFn: async () => {
-      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const res = await fetch(`${base}/api/assets`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Не вдалося очистити історію");
-      return res.json();
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["history"] });
-    },
-  });
+  onSuccess: () => {
+    qc.invalidateQueries({ queryKey: ["history"] });
+  },
+});
+
+const { data = [], isLoading } = useQuery({
+  queryKey: ["history"],
+
+  queryFn: () =>
+    apiFetch<{ count: number; assets: HistoryItem[] }>("/assets").then(
+      (r) => r.assets
+    ),
+
+  staleTime: 0,
+  refetchOnWindowFocus: true,
+
+  refetchInterval: clearMutation.isPending ? false : 5000,
+  refetchIntervalInBackground: true,
+});
 
   return (
     <Layout>
