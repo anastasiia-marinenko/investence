@@ -501,11 +501,8 @@ export default function Analytics() {
             <p className="text-sm font-semibold text-foreground">
               Активність розробників за останній місяць
             </p>
-            <InfoTooltip text="Кількість комітів у GitHub-репозиторіях криптовалютних проєктів за останній місяць. Дані оновлюються при аналізі активу." />
+            <InfoTooltip text="Поточна кількість комітів у GitHub-репозиторіях криптовалютних проєктів за останній місяць для кожного проаналізованого крипто-активу. Дані оновлюються при аналізі активу." />
           </div>
-          <p className="text-xs text-muted-foreground -mt-2">
-            Показує поточну кількість комітів за останній місяць для кожного проаналізованого крипто-активу.
-          </p>
           {isLoading ? (
             <Skeleton className="h-40 w-full" />
           ) : (data?.charts.github_activity ?? []).length > 0 ? (
@@ -540,6 +537,7 @@ export default function Analytics() {
                   tick={{ fontSize: 11, fontWeight: 600 }}
                   width={55}
                 />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Tooltip
                   formatter={(v: number) => [v.toLocaleString(), "Комітів за місяць"]}
                   contentStyle={{ fontSize: 11, borderRadius: 8 }}
