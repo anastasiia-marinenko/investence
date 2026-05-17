@@ -165,7 +165,7 @@ export default function Compare() {
               ) : priceChart.length > 0 ? (
                 <>
                 <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={priceChart} margin={{ top: 5, right: 10, bottom: 15, left: 5 }}>
+                  <LineChart data={priceChart} margin={{ top: 5, right: 10, bottom: 5, left: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis
                       dataKey="date"
@@ -186,6 +186,7 @@ export default function Compare() {
                         value: "Зміна ціни %",
                         angle: -90,
                         position: "insideLeft",
+                        offset: -5,
                         style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
                       }}
                     />

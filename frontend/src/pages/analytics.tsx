@@ -209,6 +209,7 @@ export default function Analytics() {
               <p className="text-sm font-semibold text-foreground">
                 Розподіл новин за тональністю
               </p>
+              <InfoTooltip text="Розподіл усіх зібраних та проаналізованих новин за тональністю." />
             </div>
             {isLoading ? (
               <Skeleton className="h-52 w-full" />
@@ -246,11 +247,6 @@ export default function Analytics() {
               <p className="text-sm text-muted-foreground text-center py-8">Дані тимчасово недоступні</p>
             )}
           </div>
-          {pieData.length > 0 && (
-            <p className="text-xs text-muted-foreground text-center mt-1">
-              Розподіл усіх зібраних та проаналізованих новин за тональністю.
-            </p>
-          )}
 
           {/* Стовпчаста діаграма активності новин */}
           <div className={CARD}>
@@ -263,7 +259,7 @@ export default function Analytics() {
               <Skeleton className="h-40 w-full" />
             ) : (
               <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={data?.charts.news_activity ?? []} margin={{ top: 5, right: 10, bottom: 25, left: 25 }}>
+                <BarChart data={data?.charts.news_activity ?? []} margin={{ top: 5, right: 10, bottom: 5, left: 25 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis
                     dataKey="date"
@@ -378,7 +374,7 @@ export default function Analytics() {
               <Skeleton className="h-40 w-full" />
             ) : (data?.charts.price_activity ?? []).length > 0 ? (
               <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={data!.charts.price_activity} margin={{ top: 5, right: 10, bottom: 25, left: 25 }}>
+                <LineChart data={data!.charts.price_activity} margin={{ top: 5, right: 10, bottom: 5, left: 25 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis
                     dataKey="date"
@@ -399,6 +395,7 @@ export default function Analytics() {
                       value: "Зміна %",
                       angle: -90,
                       position: "insideLeft",
+                      offset: -5,
                       style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
                     }}
                   />
@@ -509,7 +506,7 @@ export default function Analytics() {
               <Skeleton className="h-40 w-full" />
             ) : (data?.charts.github_activity ?? []).length > 0 ? (
               <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={data!.charts.github_activity} margin={{ top: 5, right: 10, bottom: 25, left: 25 }}>
+                <BarChart data={data!.charts.github_activity} margin={{ top: 5, right: 10, bottom: 5, left: 25 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis
                     dataKey="date"
@@ -569,7 +566,13 @@ export default function Analytics() {
                     <th className="py-2 w-8 text-xs font-medium">#</th>
                     <th className="py-2 text-xs font-medium">Тікер</th>
                     <th className="py-2 text-xs font-medium hidden sm:table-cell">Назва</th>
-                    <th className="py-2 text-xs font-medium text-right">Зірки</th>
+                    <th className="py-2 text-xs font-medium text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Зірки</span>
+
+                        <InfoTooltip text="Зірка – позначення репозиторію як цікавого користувачем." />
+                      </div>
+                    </th>
                     <th className="py-2 text-xs font-medium text-right">
                       <div className="flex items-center justify-end gap-1">
                         <span>Ком./міс.</span>

@@ -183,7 +183,7 @@ export default function Dashboard() {
             </p>
           ) : priceChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={180}>
-              <AreaChart data={priceChartData} margin={{ top: 5, right: 10, bottom: 25, left: 10 }}>
+              <AreaChart data={priceChartData} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
                 <defs>
                   <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.15} />
@@ -360,7 +360,7 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height={160}>
                 <ComposedChart
                   data={data.correlation.chart_data}
-                  margin={{ top: 5, right: 10, bottom: 15, left: 5 }}
+                  margin={{ top: 5, right: 10, bottom: 5, left: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis
@@ -480,8 +480,8 @@ export default function Dashboard() {
                     <span className="text-sm font-mono font-medium text-primary">{r.repo_name}</span>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
-                        <span>⭐ {r.stars.toLocaleString()}</span>
-                        <InfoTooltip text="Кількість користувачів, які позначили репозиторій як цікавий." />
+                        <span>Зірки {r.stars.toLocaleString()}</span>
+                        <InfoTooltip text="Зірка – позначення репозиторію як цікавого користувачем." />
                       </div>
                      <div className="flex items-center gap-1">
                         <span>Форки: {r.forks.toLocaleString()}</span>
