@@ -61,8 +61,8 @@ export default function History() {
 
 const clearMutation = useMutation({
   mutationFn: async () => {
-    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-    const res = await fetch(`${base}/api/assets`, {
+    const apiBase = import.meta.env.VITE_API_URL || '/api';
+    const res = await fetch(`${apiBase}/assets`, {
       method: "DELETE",
     });
 
