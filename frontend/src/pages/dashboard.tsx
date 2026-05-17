@@ -122,7 +122,7 @@ export default function Dashboard() {
                         const hh = String(d.getHours()).padStart(2, "0");
                         const min = String(d.getMinutes()).padStart(2, "0");
                         const ss = String(d.getSeconds()).padStart(2, "0");
-                        return `Дані оновлено: ${mm}/${dd}/${yyyy}, ${hh}:${min}:${ss}`;
+                        return `Дані оновлено: ${yyyy}-${mm}-${dd}, ${hh}:${min}:${ss}`;
                       })()}
                     </span>
                   </div>
@@ -142,7 +142,7 @@ export default function Dashboard() {
                 {isLoading ? "Оновлення…" : "Оновити"}
               </button>
               <a
-                href={`/api/export/${ticker}`}
+                href={`/api/export/${ticker}?days=30`}
                 download
                 className="border border-border rounded-lg px-3 py-1.5 text-xs hover:bg-accent transition-colors"
               >
