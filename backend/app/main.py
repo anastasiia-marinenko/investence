@@ -41,7 +41,8 @@ app.add_middleware(
         "http://localhost:5173",   # Vite dev server
         "http://localhost:3000",   # альтернативний порт
         "http://localhost:8080",
-        "https://investence-backend-production.up.railway.app",
+        "https://investence-backend.up.railway.app",
+        "https://investence.up.railway.app",
         "*",
     ],
     allow_credentials=True,
