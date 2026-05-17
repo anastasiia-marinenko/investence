@@ -351,8 +351,7 @@ export default function Dashboard() {
         <div className={CARD}>
           <p className="text-base font-semibold flex items-center">
             Взаємозв’язок новинного настрою та зміни ціни
-            <InfoTooltip text="Коефіцієнт кореляції Пірсона показує силу зв'язку між новинним настроєм та зміною ціни активу. Значення близькі до +1 означають сильний позитивний зв'язок, близькі до -1 – негативний." />
-          </p>
+            <InfoTooltip text="Графік показує взаємозв’язок між середнім новинним настроєм та зміною ціни активу за днями. Стовпчики відображають тональність новин, а лінія — зміну ціни у відсотках. Для оцінки сили зв’язку використовується коефіцієнт кореляції Пірсона: r = cov(X,Y)/(σX·σY). Значення r у діапазоні від -1 до +1: ближче до +1 — сильний прямий зв’язок, ближче до -1 — сильний обернений, близько 0 — слабкий або відсутній зв’язок." />          </p>
           {isLoading ? (
             <Skeleton className="h-36 w-full" />
           ) : data?.correlation.chart_data && data.correlation.chart_data.length > 0 ? (
@@ -424,8 +423,7 @@ export default function Dashboard() {
                     <span className="text-muted-foreground">
                       Коефіцієнт кореляції (Пірсон):
                     </span>
-                    <InfoTooltip text="Статистичний показник сили взаємозв’язку між двома величинами." />
-                  </div>
+                    <InfoTooltip text="Коефіцієнт Пірсона показує, наскільки зміни новинного настрою пов’язані зі змінами ціни активу. Значення > 0 означає, що позитивні новини зазвичай супроводжуються зростанням ціни, < 0 — зниженням." />                  </div>
                   <span className="font-mono font-semibold">
                     {data.correlation.coefficient != null
                       ? `${data.correlation.coefficient > 0 ? "+" : ""}${data.correlation.coefficient.toFixed(2)}`
