@@ -158,23 +158,14 @@ export default function Compare() {
             <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-3">
               <p className="text-sm font-semibold text-foreground flex items-center gap-1">
                 Порівняння зміни цін активів за останні 30 днів (%)
-                <InfoTooltip text="Графік відображає відсоткову зміну ціни активів відносно першого дня періоду." />
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Графік показує відсоткову зміну ціни відносно початку обраного періоду.
-                Це дозволяє порівнювати активи з різними ціновими діапазонами.
+                <InfoTooltip text="Графік відображає відсоткову зміну ціни активів відносно першого дня обраного періоду." />
               </p>
               {queryA.isLoading || queryB.isLoading ? (
                 <Skeleton className="h-44 w-full" />
               ) : priceChart.length > 0 ? (
                 <>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <span>Легенда показує динаміку зміни ціни для кожного активу.</span>
-                    <InfoTooltip text="Кожна лінія відповідає окремому активу, вибраному для порівняння." />
-                  </div>
-                
                 <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={priceChart} margin={{ top: 5, right: 10, bottom: 25, left: 5 }}>
+                  <LineChart data={priceChart} margin={{ top: 5, right: 10, bottom: 15, left: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis
                       dataKey="date"
@@ -227,6 +218,10 @@ export default function Compare() {
                     )}
                   </LineChart>
                 </ResponsiveContainer>
+
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span>Підказка показує динаміку зміни ціни для кожного активу, вибраного для порівняння.</span>
+                  </div>
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-6">

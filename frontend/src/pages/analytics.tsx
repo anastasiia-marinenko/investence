@@ -209,7 +209,6 @@ export default function Analytics() {
               <p className="text-sm font-semibold text-foreground">
                 Розподіл новин за тональністю
               </p>
-              <InfoTooltip text="Показує співвідношення позитивних, негативних та нейтральних новин." />
             </div>
             {isLoading ? (
               <Skeleton className="h-52 w-full" />
@@ -259,8 +258,6 @@ export default function Analytics() {
               <p className="text-sm font-semibold text-foreground">
                 Динаміка кількості новин за останні 7 днів
               </p>
-
-              <InfoTooltip text="Показує зміну кількості зібраних новин по днях." />
             </div>
             {isLoading ? (
               <Skeleton className="h-40 w-full" />
@@ -286,6 +283,7 @@ export default function Analytics() {
                       value: "Кількість",
                       angle: -90,
                       position: "insideLeft",
+                      offset: -5,
                       style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
                     }}
                   />
@@ -374,12 +372,8 @@ export default function Analytics() {
                 Середня зміна ціни активів за останні 7 днів
               </p>
 
-              <InfoTooltip text="Показує середню відсоткову зміну ціни всіх проаналізованих активів." />
+              <InfoTooltip text="Показує середню відсоткову зміну ціни всіх проаналізованих активів за кожен день. Зелені точки – позитивна зміна, червоні – негативна." />
             </div>
-            <p className="text-xs text-muted-foreground">
-              Середня відсоткова зміна ціни по всіх проаналізованих активах за кожен день.
-              Зелені точки – позитивна зміна, червоні – негативна.
-            </p>
             {isLoading ? (
               <Skeleton className="h-40 w-full" />
             ) : (data?.charts.price_activity ?? []).length > 0 ? (
@@ -452,22 +446,16 @@ export default function Analytics() {
                     <th className="py-2 text-xs font-medium text-right">
                       <div className="flex items-center justify-end gap-1">
                         <span>Ціна</span>
-
-                        <InfoTooltip text="Поточна ринкова ціна активу." />
                       </div>
                     </th>
                     <th className="py-2 text-xs font-medium text-right">
                       <div className="flex items-center justify-end gap-1">
                         <span>Зміна за день</span>
-
-                        <InfoTooltip text="Відсоткова зміна ціни активу за останні 24 години." />
                       </div>
                     </th>
                     <th className="py-2 text-xs font-medium text-right hidden md:table-cell">
                       <div className="flex items-center justify-end gap-1">
                         <span>Зміна за 30 днів</span>
-
-                        <InfoTooltip text="Відсоткова зміна ціни активу за останні 30 днів." />
                       </div>
                     </th>
                   </tr>
@@ -514,12 +502,9 @@ export default function Analytics() {
                 Кількість комітів розробників за останні 7 днів
               </p>
 
-              <InfoTooltip text="Показує активність розробників у GitHub-репозиторіях криптовалютних проєктів." />
+              <InfoTooltip text="Загальна кількість комітів у відкритих GitHub-репозиторіях криптовалютних проєктів за кожен день.
+              Висока активність розробників може бути випереджальним сигналом для крипто-активів." />
             </div>
-            <p className="text-xs text-muted-foreground">
-              Загальна кількість комітів у відкритих репозиторіях криптовалютних проєктів за кожен день.
-              Висока активність розробників може бути випереджальним сигналом для крипто-активів.
-            </p>
             {isLoading ? (
               <Skeleton className="h-40 w-full" />
             ) : (data?.charts.github_activity ?? []).length > 0 ? (
@@ -543,6 +528,7 @@ export default function Analytics() {
                     label={{
                       value: "Коміти",
                       angle: -90,
+                      offset: -5,
                       position: "insideLeft",
                       style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
                     }}
@@ -586,7 +572,7 @@ export default function Analytics() {
                     <th className="py-2 text-xs font-medium text-right">Зірки</th>
                     <th className="py-2 text-xs font-medium text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <span>Коміти/міс</span>
+                        <span>Ком./міс.</span>
 
                         <InfoTooltip text="Кількість комітів у GitHub-репозиторіях за останній місяць." />
                       </div>
@@ -627,8 +613,6 @@ export default function Analytics() {
                               ? "Середня"
                               : "Низька"}
                           </span>
-
-                          <InfoTooltip text="Рівень активності визначається за кількістю комітів та активністю розробників у GitHub-репозиторіях." />
                         </div>
                       </td>
                     </tr>

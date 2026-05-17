@@ -96,7 +96,7 @@ export default function Dashboard() {
                             {formatPrice(data!.current_price)}
                           </span>
 
-                          <InfoTooltip text={`Поточна ринкова ціна активу у валюті ${data?.currency || "USD"}.`} />
+                          <InfoTooltip text={`Поточна ринкова ціна активу.`} />
                         </div>
                     )}
                     {data!.daily_change != null && (
@@ -207,7 +207,7 @@ export default function Dashboard() {
                   tick={{ fontSize: 11 }}
                   width={60}
                   label={{
-                    value: `Ціна (${data?.currency || "USD"})`,
+                    value: `Ціна`,
                     angle: -90,
                     position: "insideLeft",
                     offset: 10,
@@ -219,7 +219,7 @@ export default function Dashboard() {
                   labelFormatter={(l) => `Дата: ${l}`}
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
                 />
-                <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 11 }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Area
                   type="monotone"
                   dataKey="price"
@@ -340,8 +340,6 @@ export default function Dashboard() {
                       {n.sentiment_score > 0 ? "+" : ""}
                       {n.sentiment_score.toFixed(2)}
                     </span>
-
-                      <InfoTooltip text="Оцінка тональності конкретної новини: від -1 (негативна) до +1 (позитивна)." />
                   </div>
                 </div>
               ))}
@@ -362,7 +360,7 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height={160}>
                 <ComposedChart
                   data={data.correlation.chart_data}
-                  margin={{ top: 5, right: 10, bottom: 25, left: 5 }}
+                  margin={{ top: 5, right: 10, bottom: 15, left: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis
@@ -496,7 +494,6 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center gap-1">
                         <ActivityBadge a={r.activity} />
-                        <InfoTooltip text="Активність визначається за кількістю комітів, issues, форків та популярністю репозиторію." />
                       </div>
                     </div>
                   </a>
@@ -510,7 +507,7 @@ export default function Dashboard() {
         <div className={CARD}>
           <p className="text-base font-semibold flex items-center">
             Аналітичний звіт
-            <InfoTooltip text="Автоматично сформований підсумок на основі ринкових даних, новин та аналітики. Не є фінансовою рекомендацією." />
+            <InfoTooltip text="Загальний підсумок на основі ринкових даних, новин та аналітики." />
           </p>
           {isLoading ? (
             <div className="space-y-2 animate-pulse">
