@@ -133,7 +133,7 @@ export default function Dashboard() {
                           {data!.daily_change.toFixed(2)}%
                         </span>
 
-                        <InfoTooltip text="Відсоткова зміна ціни активу відносно попередньої торгової сесії." />
+                        <InfoTooltip text="Відсоткова зміна ціни активу порівняно з попереднім торговим днем." />
                       </div>
                     )}
                     <span className="text-xs text-muted-foreground">
