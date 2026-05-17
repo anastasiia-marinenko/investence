@@ -11,34 +11,34 @@ from app.config import settings
 
 DISCLAIMER = "Цей звіт сформований автоматично і не є фінансовою порадою."
 
-SUMMARY_PROMPT = """You are a financial analyst. Write a concise 3-5 sentence investment report based on the data below.
+SUMMARY_PROMPT = """Ти фінансовий аналітик. Напиши стислий інвестиційний звіт із 3-5 речень на основі наведених нижче даних.
 
-Asset: {name} ({ticker})
-Asset type: {asset_type}
+Актив: {name} ({ticker})
+Тип активу: {asset_type}
 
-PRICE DATA:
-- Current price: {current_price}
-- Price change (30 days): {price_change_30d}
-- Price trend: {price_trend}
+ЦІНОВІ ДАНІ:
+- Поточна ціна: {current_price}
+- Зміна ціни (30 днів): {price_change_30d}
+- Ціновий тренд: {price_trend}
 
-NEWS SENTIMENT:
-- Average sentiment score: {avg_sentiment} (range: -1.0 to +1.0)
-- Sentiment label: {sentiment_label}
-- Number of news articles analyzed: {news_count}
+НАСТРОЇ НОВИН:
+- Середня оцінка настрою: {avg_sentiment} (діапазон: від -1.0 до +1.0)
+- Тональність: {sentiment_label}
+- Кількість проаналізованих новин: {news_count}
 
 {github_section}
 
-CORRELATION:
-- Pearson correlation (sentiment vs price): {correlation}
-- Interpretation: {correlation_label}
+КОРЕЛЯЦІЯ:
+- Кореляція Пірсона (настрій vs ціна): {correlation}
+- Інтерпретація: {correlation_label}
 
-Write a professional 3-5 sentence summary in English that:
-1. Describes the current market situation for this asset
-2. Mentions key signals from news sentiment
-3. Notes any important patterns or risks
-4. Is understandable without deep financial knowledge
+Напиши професійний підсумок із 3-5 речень українською мовою, який:
+1. Описує поточну ринкову ситуацію для цього активу
+2. Згадує ключові сигнали з аналізу новинного настрою
+3. Відзначає важливі закономірності або ризики
+4. Є зрозумілим без глибоких фінансових знань
 
-Respond with the summary text only, no headers or bullet points."""
+Поверни лише текст підсумку без заголовків і маркованих списків."""
 
 
 class SummaryGenerator:
@@ -62,16 +62,16 @@ class SummaryGenerator:
 
         if not prices:
             return {
-                "current_price": "N/A",
-                "price_change_30d": "N/A",
-                "price_trend": "insufficient data",
+                "current_price": "Н/Д",
+                "price_change_30d": "Н/Д",
+                "price_trend": "недостатньо даних",
             }
 
         current = prices[0].close
         oldest = prices[-1].close if len(prices) > 1 else current
 
         change_30d = ((current - oldest) / oldest * 100) if oldest else 0
-        trend = "upward" if change_30d > 2 else "downward" if change_30d < -2 else "sideways"
+        trend = "зростаючий" if change_30d > 2 else "спадний" if change_30d < -2 else "боковий"
 
         currency = asset.currency or "USD"
         symbol = "$" if currency == "USD" else currency
@@ -84,7 +84,7 @@ class SummaryGenerator:
 
     def _get_sentiment_context(self, asset: Asset, db: Session) -> dict:
         """
-        Отримує контекст sentiment даних для промпту.
+        Отримує контекст даних настроїв новин для промпту.
         """
         analyzed_news = db.query(News).filter(
             News.asset_id == asset.id,
@@ -94,8 +94,8 @@ class SummaryGenerator:
 
         if not analyzed_news:
             return {
-                "avg_sentiment": "N/A",
-                "sentiment_label": "unknown",
+                "avg_sentiment": "Н/Д",
+                "sentiment_label": "невідомо",
                 "news_count": 0,
             }
 
@@ -103,11 +103,11 @@ class SummaryGenerator:
         avg = sum(scores) / len(scores)
 
         if avg > 0.2:
-            label = "positive"
+            label = "позитивний"
         elif avg < -0.2:
-            label = "negative"
+            label = "негативний"
         else:
-            label = "neutral"
+            label = "нейтральний"
 
         return {
             "avg_sentiment": f"{avg:.4f}",
@@ -128,22 +128,22 @@ class SummaryGenerator:
         ).order_by(GitHubStats.recorded_at.desc()).limit(5).all()
 
         if not stats:
-            return "GITHUB ACTIVITY:\n- No data available"
+            return "АКТИВНІСТЬ GITHUB:\n- Дані недоступні"
 
         total_stars = sum(s.stars or 0 for s in stats)
         total_commits = sum(s.commits_last_month or 0 for s in stats)
         top_repo = max(stats, key=lambda s: s.stars or 0)
 
         activity_levels = [s.activity_level for s in stats if s.activity_level]
-        overall_activity = "high" if "high" in activity_levels else \
-                          "medium" if "medium" in activity_levels else "low"
+        overall_activity = "висока" if "high" in activity_levels else \
+                          "середня" if "medium" in activity_levels else "низька"
 
         return (
-            f"GITHUB ACTIVITY (crypto ecosystem):\n"
-            f"- Top repository: {top_repo.repo_name} "
-            f"({top_repo.stars:,} stars)\n"
-            f"- Total commits last month: {total_commits}\n"
-            f"- Overall developer activity: {overall_activity}"
+            f"АКТИВНІСТЬ GITHUB (криптовалютна екосистема):\n"
+            f"- Найпопулярніший репозиторій: {top_repo.repo_name} "
+            f"({top_repo.stars:,} зірок)\n"
+            f"- Загальна кількість комітів за останній місяць: {total_commits}\n"
+            f"- Загальна активність розробників: {overall_activity}"
         )
 
     def _get_correlation_context(self, asset: Asset, db: Session) -> dict:
@@ -157,11 +157,11 @@ class SummaryGenerator:
 
         if not latest_score:
             return {
-                "correlation": "N/A",
-                "correlation_label": "insufficient data",
+                "correlation": "Н/Д",
+                "correlation_label": "недостатньо даних",
             }
 
-        # Обчислюємо просту кореляцію з daily_scores
+        # Обчислюємо кореляцію на основі даних daily_scores
         scores = db.query(DailyScore).filter(
             DailyScore.asset_id == asset.id,
             DailyScore.news_sentiment_score.isnot(None),
@@ -170,8 +170,8 @@ class SummaryGenerator:
 
         if len(scores) < 3:
             return {
-                "correlation": "N/A",
-                "correlation_label": "insufficient data",
+                "correlation": "Н/Д",
+                "correlation_label": "недостатньо даних",
             }
 
         import numpy as np
@@ -181,25 +181,25 @@ class SummaryGenerator:
         try:
             coeff = np.corrcoef(sentiments, prices)[0, 1]
             if np.isnan(coeff):
-                return {"correlation": "N/A", "correlation_label": "insufficient data"}
+                return {"correlation": "Н/Д", "correlation_label": "недостатньо даних"}
 
             coeff = round(float(coeff), 4)
 
             if coeff >= 0.70:
-                label = "strong positive correlation"
+                label = "сильна позитивна кореляція"
             elif coeff >= 0.30:
-                label = "moderate correlation"
+                label = "помірна кореляція"
             elif coeff >= -0.30:
-                label = "weak correlation"
+                label = "слабка кореляція"
             else:
-                label = "negative correlation"
+                label = "негативна кореляція"
 
             return {
                 "correlation": str(coeff),
                 "correlation_label": label,
             }
         except Exception:
-            return {"correlation": "N/A", "correlation_label": "insufficient data"}
+            return {"correlation": "Н/Д", "correlation_label": "недостатньо даних"}
 
     def _call_groq(self, prompt: str) -> str | None:
         """
@@ -218,7 +218,14 @@ class SummaryGenerator:
         payload = {
             "model": "llama-3.3-70b-versatile",
             "messages": [
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": "Відповідай виключно українською мовою."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
             ],
             "temperature": 0.3,
             "max_tokens": 300,
@@ -297,7 +304,7 @@ class SummaryGenerator:
         prompt = SUMMARY_PROMPT.format(
             name=asset.name,
             ticker=asset.ticker,
-            asset_type="cryptocurrency" if asset.asset_type == "crypto" else "stock",
+            asset_type="криптовалюта" if asset.asset_type == "crypto" else "акція",
             current_price=price_ctx["current_price"],
             price_change_30d=price_ctx["price_change_30d"],
             price_trend=price_ctx["price_trend"],
