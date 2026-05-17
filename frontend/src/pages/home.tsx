@@ -107,13 +107,13 @@ export default function Home() {
 
         <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Популярні активи</p>
-          <div className="flex gap-3 flex-wrap">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {POPULAR.map((a) => (
               <button
                 key={a.ticker}
                 onClick={() => { setTicker(a.ticker); handleAnalyze(a.ticker); }}
                 disabled={loading}
-                className="border border-border rounded-lg px-4 py-2.5 text-sm hover:bg-accent hover:border-primary/30 transition-colors text-left disabled:opacity-40 group"
+                className="w-full border border-border rounded-lg px-4 py-2.5 text-sm hover:bg-accent hover:border-primary/30 transition-colors text-left disabled:opacity-40 group"
               >
                 <div className="flex items-center gap-1.5">
                   <span className="font-mono font-semibold text-foreground">{a.ticker}</span>
