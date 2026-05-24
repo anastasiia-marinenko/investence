@@ -58,10 +58,16 @@ export default function Top() {
           </div>
         </div>
 
-        <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-3">
-          <p className="text-sm font-semibold text-foreground leading-snug">
-            Рейтинг <span className="hidden sm:inline">(відсортовано за оцінкою настрою ↓)</span>
+        <div className="bg-card rounded-xl border border-border shadow-sm p-3 sm:p-5 space-y-3">
+          {/* Назва — на мобільному переноситься на два рядки */}
+          <p className="text-sm font-semibold text-foreground">
+            Рейтинг
+            <br className="sm:hidden" />
+            <span className="text-muted-foreground font-normal text-xs sm:text-sm sm:font-semibold sm:text-foreground">
+              {" "}(відсортовано за оцінкою настрою ↓)
+            </span>
           </p>
+
           {isLoading ? (
             <div className="space-y-2">
               {[1, 2, 3, 4, 5].map((i) => (
@@ -73,60 +79,70 @@ export default function Top() {
               Поки немає проаналізованих активів. Почніть пошук на головній сторінці.
             </p>
           ) : (
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-border text-muted-foreground text-left">
-                  <th className="px-1 sm:px-2 py-1.5 w-8 text-xs font-medium">#</th>
-                  <th className="px-1 sm:px-2 py-1.5 text-xs font-medium">Тікер</th>
-                  <th className="px-1 sm:px-2 py-1.5 text-xs font-medium hidden sm:table-cell">Назва</th>
-                  <th className="px-1 sm:px-2 py-1.5 text-xs font-medium text-right">Ціна</th>
-                  <th className="px-1 sm:px-2 py-1.5 text-xs font-medium text-right">Зміна за день</th>
-                  <th className="px-1 sm:px-2 py-1.5 text-xs font-medium text-right">Оцінка настрою</th>
-                  <th className="px-1 sm:px-2 py-1.5 text-xs font-medium text-right">Тональність</th>
-                </tr>
-              </thead>
-              <tbody>
-                {assets.map((a, i) => (
-                  <tr
-                    key={a.ticker}
-                    onClick={() => navigate(`/dashboard/${a.ticker}`)}
-                    className="border-b border-border/50 hover:bg-accent/50 cursor-pointer transition-colors"
-                  >
-                    <td className="py-1.5 text-muted-foreground text-xs">{i + 1}</td>
-                    <td className="py-1.5 font-mono font-semibold text-xs sm:text-sm">{a.ticker}</td>
-                    <td className="py-1.5 text-muted-foreground hidden sm:table-cell">{a.name}</td>
-                    <td className="py-1.5 text-right font-mono">
-                      {formatPrice(a.current_price)}
-                    </td>
-                    <td
-                      className={`py-1.5 text-right font-mono ${
-                        (a.daily_change ?? 0) >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {a.daily_change != null
-                        ? `${a.daily_change >= 0 ? "+" : ""}${a.daily_change.toFixed(2)}%`
-                        : "–"}
-                    </td>
-                    <td
-                      className={`py-1.5 text-right font-mono font-semibold ${
-                        (a.sentiment_score ?? 0) > 0.2
-                          ? "text-green-600"
-                          : (a.sentiment_score ?? 0) < -0.2
-                          ? "text-red-600"
-                          : "text-gray-500"
-                      }`}
-                    >
-                      {a.sentiment_score != null
-                        ? `${a.sentiment_score > 0 ? "+" : ""}${a.sentiment_score.toFixed(2)}`
-                        : "–"}
-                    </td>
-                    <td className="py-1.5 text-right">
-                      <SentimentBadge s={a.sentiment_label} />
-                    </td>
+            /* Обгортка зі скролом — на мобільному таблиця скролиться горизонтально
+               якщо колонок забагато, а не виходить за межі */
+            <div className="overflow-x-auto -mx-3 sm:mx-0">
+              <table className="w-full text-sm border-collapse min-w-[340px]">
+                <thead>
+                  <tr className="border-b border-border text-muted-foreground text-left">
+                    <th className="px-2 py-2 w-6 text-xs font-medium">#</th>
+                    <th className="px-2 py-2 text-xs font-medium">Тікер</th>
+                    {/* Назва — тільки на desktop */}
+                    <th className="px-2 py-2 text-xs font-medium hidden sm:table-cell">Назва</th>
+                    <th className="px-2 py-2 text-xs font-medium text-right">Ціна</th>
+                    {/* Зміна за день — прихована на найвужчих, видна від sm */}
+                    <th className="px-2 py-2 text-xs font-medium text-right hidden xs:table-cell sm:table-cell">
+                      Зміна
+                    </th>
+                    <th className="px-2 py-2 text-xs font-medium text-right">Оцінка</th>
+                    <th className="px-2 py-2 text-xs font-medium text-right">Тон.</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {assets.map((a, i) => (
+                    <tr
+                      key={a.ticker}
+                      onClick={() => navigate(`/dashboard/${a.ticker}`)}
+                      className="border-b border-border/50 hover:bg-accent/50 cursor-pointer transition-colors"
+                    >
+                      <td className="px-2 py-2 text-muted-foreground text-xs">{i + 1}</td>
+                      <td className="px-2 py-2 font-mono font-semibold text-xs">{a.ticker}</td>
+                      <td className="px-2 py-2 text-muted-foreground hidden sm:table-cell text-xs truncate max-w-[120px]">
+                        {a.name}
+                      </td>
+                      <td className="px-2 py-2 text-right font-mono text-xs whitespace-nowrap">
+                        {formatPrice(a.current_price)}
+                      </td>
+                      <td
+                        className={`px-2 py-2 text-right font-mono text-xs whitespace-nowrap hidden xs:table-cell sm:table-cell ${
+                          (a.daily_change ?? 0) >= 0 ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {a.daily_change != null
+                          ? `${a.daily_change >= 0 ? "+" : ""}${a.daily_change.toFixed(2)}%`
+                          : "–"}
+                      </td>
+                      <td
+                        className={`px-2 py-2 text-right font-mono font-semibold text-xs whitespace-nowrap ${
+                          (a.sentiment_score ?? 0) > 0.2
+                            ? "text-green-600"
+                            : (a.sentiment_score ?? 0) < -0.2
+                            ? "text-red-600"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        {a.sentiment_score != null
+                          ? `${a.sentiment_score > 0 ? "+" : ""}${a.sentiment_score.toFixed(2)}`
+                          : "–"}
+                      </td>
+                      <td className="px-2 py-2 text-right">
+                        <SentimentBadge s={a.sentiment_label} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
