@@ -90,3 +90,35 @@
 .wf-badge-neutral  { @apply bg-gray-100 text-gray-600 border border-gray-200 text-xs px-2.5 py-0.5 rounded-full font-medium; }
 
 .card { @apply bg-card rounded-xl border border-border shadow-sm; }
+
+/* Мобільна адаптивність */
+@media (max-width: 375px) {
+  /* Графіки */
+  .recharts-wrapper {
+    max-width: 100% !important;
+  }
+  .recharts-surface {
+    overflow: visible;
+  }
+
+  /* Таблиці */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Бейджі тональності */
+  .wf-badge-positive,
+  .wf-badge-negative,
+  .wf-badge-neutral {
+    font-size: 10px !important;
+    padding: 1px 6px !important;
+  }
+
+  /* Кнопки фільтрів */
+  .flex.gap-1 > button {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+}

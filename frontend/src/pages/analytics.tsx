@@ -194,7 +194,7 @@ export default function Analytics() {
                 {isLoading ? (
                   <Skeleton className="h-8 w-3/4" />
                 ) : (
-                  <p className={`text-2xl font-bold font-mono ${s.color}`}>{s.value}</p>
+                  <p className={`text-xl sm:text-2xl font-bold font-mono ${s.color}`}>{s.value}</p>
                 )}
               </div>
             ))}

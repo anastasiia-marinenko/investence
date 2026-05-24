@@ -26,7 +26,7 @@ function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`bg-muted animate-pulse rounded-lg ${className}`} />;
 }
 
-const CARD = "bg-card rounded-xl border border-border shadow-sm p-5 space-y-4";
+const CARD = "bg-card rounded-xl border border-border shadow-sm p-5 space-y-4 min-w-0";
 
 export default function Dashboard() {
   const params = useParams<{ ticker: string }>();
@@ -164,7 +164,7 @@ export default function Dashboard() {
                 <button
                   key={p}
                   onClick={() => setPeriod(p)}
-                  className={`px-3 py-1 text-xs rounded-lg border font-medium transition-colors ${
+                  className={`px-2 sm:px-3 py-1 text-xs rounded-lg border font-medium transition-colors ${
                     period === p
                       ? "bg-primary text-primary-foreground border-primary"
                       : "border-border text-muted-foreground hover:bg-accent"
@@ -271,7 +271,7 @@ export default function Dashboard() {
                 <button
                   key={f.key}
                   onClick={() => setNewsFilter(f.key as typeof newsFilter)}
-                  className={`px-3 py-1 text-xs rounded-lg border font-medium transition-colors ${
+                  className={`px-2 sm:px-3 py-1 text-xs rounded-lg border font-medium transition-colors ${
                     newsFilter === f.key
                       ? "bg-primary text-primary-foreground border-primary"
                       : "border-border text-muted-foreground hover:bg-accent"

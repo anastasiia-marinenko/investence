@@ -71,7 +71,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     href === "/" ? location === "/" : location.startsWith(href);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+      <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
       <header className="border-b border-border bg-card sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/">
@@ -167,7 +167,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         )}
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">{children}</main>
+      <main className="flex-1 max-w-6xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-8 overflow-x-hidden min-w-0">{children}</main>
 
       <footer className="border-t border-border bg-card mt-auto">
         <div className="max-w-6xl mx-auto px-6 py-6">
