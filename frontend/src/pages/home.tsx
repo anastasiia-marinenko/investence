@@ -81,7 +81,7 @@ export default function Home() {
         </div>
 
         <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-3">
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
               value={ticker}
@@ -89,15 +89,15 @@ export default function Home() {
                 setTicker(e.target.value.replace(/[^A-Za-z0-9-]/g, "").slice(0, 10));
                 setError("");
               }}
-              placeholder="Введіть тікер (напр., AAPL або BTC-USD)"
-              className="flex-1 border border-border rounded-lg px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              placeholder="напр., AAPL або BTC-USD"
+              className="flex-1 border border-border rounded-lg px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring transition-shadow w-full sm:w-auto"
               onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
               disabled={loading}
             />
             <button
               onClick={() => handleAnalyze()}
               disabled={!ticker.trim() || loading}
-              className="bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity min-w-[110px]"
+              className="bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity min-w-[110px] w-full sm:w-auto text-sm"
             >
               {loading ? "Перевірка…" : "Аналізувати"}
             </button>

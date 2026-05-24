@@ -59,8 +59,8 @@ export default function Top() {
         </div>
 
         <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-3">
-          <p className="text-sm font-semibold text-foreground">
-            Рейтинг (відсортовано за оцінкою настрою ↓)
+          <p className="text-sm font-semibold text-foreground leading-snug">
+            Рейтинг <span className="hidden sm:inline">(відсортовано за оцінкою настрою ↓)</span>
           </p>
           {isLoading ? (
             <div className="space-y-2">
@@ -76,13 +76,13 @@ export default function Top() {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="border-b border-border text-muted-foreground text-left">
-                  <th className="py-2 w-8 text-xs font-medium">#</th>
-                  <th className="py-2 text-xs font-medium">Тікер</th>
-                  <th className="py-2 text-xs font-medium hidden sm:table-cell">Назва</th>
-                  <th className="py-2 text-xs font-medium text-right">Ціна</th>
-                  <th className="py-2 text-xs font-medium text-right">Зміна за день</th>
-                  <th className="py-2 text-xs font-medium text-right">Оцінка настрою</th>
-                  <th className="py-2 text-xs font-medium text-right">Тональність</th>
+                  <th className="px-1 sm:px-2 py-1.5 w-8 text-xs font-medium">#</th>
+                  <th className="px-1 sm:px-2 py-1.5 text-xs font-medium">Тікер</th>
+                  <th className="px-1 sm:px-2 py-1.5 text-xs font-medium hidden sm:table-cell">Назва</th>
+                  <th className="px-1 sm:px-2 py-1.5 text-xs font-medium text-right">Ціна</th>
+                  <th className="px-1 sm:px-2 py-1.5 text-xs font-medium text-right">Зміна за день</th>
+                  <th className="px-1 sm:px-2 py-1.5 text-xs font-medium text-right">Оцінка настрою</th>
+                  <th className="px-1 sm:px-2 py-1.5 text-xs font-medium text-right">Тональність</th>
                 </tr>
               </thead>
               <tbody>
@@ -92,14 +92,14 @@ export default function Top() {
                     onClick={() => navigate(`/dashboard/${a.ticker}`)}
                     className="border-b border-border/50 hover:bg-accent/50 cursor-pointer transition-colors"
                   >
-                    <td className="py-2.5 text-muted-foreground text-xs">{i + 1}</td>
-                    <td className="py-2.5 font-mono font-semibold">{a.ticker}</td>
-                    <td className="py-2.5 text-muted-foreground hidden sm:table-cell">{a.name}</td>
-                    <td className="py-2.5 text-right font-mono">
+                    <td className="py-1.5 text-muted-foreground text-xs">{i + 1}</td>
+                    <td className="py-1.5 font-mono font-semibold text-xs sm:text-sm">{a.ticker}</td>
+                    <td className="py-1.5 text-muted-foreground hidden sm:table-cell">{a.name}</td>
+                    <td className="py-1.5 text-right font-mono">
                       {formatPrice(a.current_price)}
                     </td>
                     <td
-                      className={`py-2.5 text-right font-mono ${
+                      className={`py-1.5 text-right font-mono ${
                         (a.daily_change ?? 0) >= 0 ? "text-green-600" : "text-red-600"
                       }`}
                     >
@@ -108,7 +108,7 @@ export default function Top() {
                         : "–"}
                     </td>
                     <td
-                      className={`py-2.5 text-right font-mono font-semibold ${
+                      className={`py-1.5 text-right font-mono font-semibold ${
                         (a.sentiment_score ?? 0) > 0.2
                           ? "text-green-600"
                           : (a.sentiment_score ?? 0) < -0.2
@@ -120,7 +120,7 @@ export default function Top() {
                         ? `${a.sentiment_score > 0 ? "+" : ""}${a.sentiment_score.toFixed(2)}`
                         : "–"}
                     </td>
-                    <td className="py-2.5 text-right">
+                    <td className="py-1.5 text-right">
                       <SentimentBadge s={a.sentiment_label} />
                     </td>
                   </tr>

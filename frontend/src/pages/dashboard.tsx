@@ -320,10 +320,10 @@ export default function Dashboard() {
                     >
                       {n.title}
                     </a>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                      <span>{n.source}</span>
+                      <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground flex-wrap">
+                      <span className="truncate max-w-[100px]">{n.source}</span>
                       <span>·</span>
-                      <span>{n.published_at.slice(0, 10)}</span>
+                      <span className="whitespace-nowrap">{n.published_at.slice(0, 10)}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">

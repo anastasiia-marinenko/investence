@@ -219,9 +219,9 @@ export default function Analytics() {
             {isLoading ? (
               <Skeleton className="h-52 w-full" />
             ) : pieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
-                  <Pie data={pieData} cx="38%" cy="50%" outerRadius={85} dataKey="value" nameKey="name">
+                  <Pie data={pieData} cx="35%" cy="50%" outerRadius={70} dataKey="value" nameKey="name">
                     {pieData.map((entry) => (
                       <Cell key={entry.name} fill={entry.color} />
                     ))}
@@ -513,7 +513,7 @@ export default function Analytics() {
               <BarChart
                 data={data!.charts.github_activity}
                 layout="vertical"
-                margin={{ top: 5, right: 40, bottom: 5, left: 60 }}
+                margin={{ top: 5, right: 10, bottom: 20, left: 5 }}
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
@@ -593,7 +593,7 @@ export default function Analytics() {
                         <InfoTooltip text="Кількість комітів у GitHub-репозиторіях за останній місяць." />
                       </div>
                     </th>
-                    <th className="py-2 text-xs font-medium text-right">
+                    <th className="py-2 text-xs font-medium text-center">
                     <div className="flex items-center justify-end gap-1">
                       <span>Активність</span>
 
@@ -611,7 +611,7 @@ export default function Analytics() {
                       <td className="py-2.5 font-mono font-semibold">{a.ticker}</td>
                       <td className="py-2.5 text-muted-foreground hidden sm:table-cell text-xs">{a.name}</td>
                       <td className="py-2.5 text-right font-mono">{a.total_stars.toLocaleString()}</td>
-                      <td className="py-2.5 text-right font-mono">{a.commits_last_month}</td>
+                      <td className="py-2.5 text-center font-mono">{a.commits_last_month}</td>
                       <td className="py-2.5 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <span
