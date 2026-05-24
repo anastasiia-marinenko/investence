@@ -23,7 +23,6 @@ export default function Settings() {
   }
 
  function handleReset() {
-  reset();
   setLocalCurrency("USD");
   setLocalPeriod("30");
 }
