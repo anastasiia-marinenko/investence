@@ -95,7 +95,7 @@ export default function Top() {
                       Зміна
                     </th>
                     <th className="px-2 py-2 text-xs font-medium text-right">Оцінка</th>
-                    <th className="px-2 py-2 text-xs font-medium text-right">Тон.</th>
+                    <th className="px-2 py-2 text-xs font-medium text-right">Тональність</th>
                   </tr>
                 </thead>
                 <tbody>

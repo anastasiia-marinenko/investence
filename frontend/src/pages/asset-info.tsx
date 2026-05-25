@@ -70,12 +70,6 @@ export default function AssetInfo() {
     <Layout>
       <div className="max-w-xl mx-auto space-y-5">
 
-        <Link href={`/dashboard/${ticker}`}>
-          <span className="text-sm text-primary hover:underline cursor-pointer inline-flex items-center gap-1">
-            ← Назад до дашборду
-          </span>
-        </Link>
-
         <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-4">
           {isLoading ? (
             <div className="space-y-3">
