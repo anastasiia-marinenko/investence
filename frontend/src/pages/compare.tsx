@@ -1,3 +1,4 @@
+// Імпорти хуків, графіків, API та контексту
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -8,16 +9,19 @@ import { apiFetch, type DashboardData } from "@/lib/api";
 import { useSettings } from "@/context/SettingsContext";
 import InfoTooltip from "@/components/ui/info-tooltip";
 
+// Бейдж тональності: вибирає стиль за типом (позитив/негатив/нейтраль)
 function SentimentBadge({ s }: { s: string }) {
   if (s === "positive") return <span className="wf-badge-positive">Позитивний</span>;
   if (s === "negative") return <span className="wf-badge-negative">Негативний</span>;
   return <span className="wf-badge-neutral">Нейтральний</span>;
 }
 
+// Заглушка для імітації завантаження
 function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`bg-muted animate-pulse rounded-lg ${className}`} />;
 }
 
+// Універсальний рядок для блоків інформації: лейбл зліва, значення справа
 function InfoRow({
   label,
   children,
@@ -34,11 +38,13 @@ function InfoRow({
 }
 
 export default function Compare() {
+  // Стани для двох тікерів, підтвердження порівняння та форматування цін
   const [tickerA, setTickerA] = useState("");
   const [tickerB, setTickerB] = useState("");
   const [submitted, setSubmitted] = useState<[string, string] | null>(null);
   const { formatPrice } = useSettings();
 
+  // Два паралельні запити: дані завантажуються лише після підтвердження порівняння
   const queryA = useQuery({
     queryKey: ["dashboard", submitted?.[0], "30"],
     queryFn: () => apiFetch<DashboardData>(`/assets/${submitted![0]}?days=30`),
@@ -55,6 +61,7 @@ export default function Compare() {
   const A = queryA.data;
   const B = queryB.data;
 
+  // Валідація: обидва тікери заповнені, різні, не порожні → запуск порівняння
   function handleCompare() {
     const a = tickerA.trim().toUpperCase();
     const b = tickerB.trim().toUpperCase();
@@ -62,12 +69,14 @@ export default function Compare() {
     setSubmitted([a, b]);
   }
 
+  // Скидання форми та результатів до початкового стану
   function handleReset() {
     setTickerA("");
     setTickerB("");
     setSubmitted(null);
   }
 
+  // Підготовка даних для графіка: нормалізація цін до % зміни від першого дня, синхронізація дат
   const priceChart = (() => {
     if (!A?.prices.data?.length || !B?.prices.data?.length) return [];
     const mapA = new Map(A.prices.data.map((p) => [p.date, p.close]));
@@ -82,6 +91,7 @@ export default function Compare() {
     }));
   })();
 
+  // Перевірка на дублікат тікерів для блокування кнопки та показу помилки
   const isDuplicate =
     tickerA.trim().toUpperCase() === tickerB.trim().toUpperCase() && tickerA.trim() !== "";
 
@@ -90,6 +100,7 @@ export default function Compare() {
       <div className="space-y-5">
         <h2 className="text-xl font-bold">Порівняння активів</h2>
 
+        {/* Форма вибору двох тікерів: інпути, валідація, кнопки дій */}
         <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-4">
           <p className="text-sm font-semibold text-foreground">Виберіть два активи</p>
           <div className="flex flex-wrap gap-3 items-end">
@@ -155,6 +166,7 @@ export default function Compare() {
 
         {submitted && (
           <>
+            {/* Графік порівняння: дві лінії, нормалізовані до % зміни від старту */}
             <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-3">
               <p className="text-sm font-semibold text-foreground flex items-center gap-1">
                 Порівняння зміни цін активів за останні 30 днів (%)
@@ -231,6 +243,7 @@ export default function Compare() {
               )}
             </div>
 
+            {/* Дві картки з деталями активів: ціна, зміна, настрій, кореляція, AI-звіт */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 { q: queryA, color: "border-primary/30" },
@@ -307,7 +320,7 @@ export default function Compare() {
                                 label={
                                   <div className="flex items-center gap-1">
                                     <span>Кореляція</span>
-                                    <InfoTooltip text="Показує силу взаємозв’язку між новинним настроєм та зміною ціни активу." />
+                                    <InfoTooltip text="Показує силу взаємозв'язку між новинним настроєм та зміною ціни активу." />
                                   </div>
                                 }
                               >

@@ -1,3 +1,4 @@
+// Імпорти хука для доступу до черги сповіщень та UI-компонентів тостів
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
@@ -8,11 +9,14 @@ import {
   ToastViewport,
 } from "@/components/ui/toast"
 
+// Кореневий компонент для відображення всіх активних сповіщень
 export function Toaster() {
+  // Отримуємо масив тостів із глобального стану
   const { toasts } = useToast()
 
   return (
     <ToastProvider>
+      {/* Рендеринг кожного тосту з черги: заголовок, опис, дія, кнопка закриття */}
       {toasts.map(function ({ id, title, description, action, ...props }) {
         return (
           <Toast key={id} {...props}>
@@ -27,6 +31,7 @@ export function Toaster() {
           </Toast>
         )
       })}
+      {/* Контейнер для позиціонування тостів у вікні (зазвичай правий нижній кут) */}
       <ToastViewport />
     </ToastProvider>
   )

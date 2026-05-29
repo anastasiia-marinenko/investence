@@ -1,3 +1,4 @@
+// Імпорти хуків, роутера, графіків, контексту та API-клієнта
 import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -10,35 +11,45 @@ import { apiFetch, type DashboardData } from "@/lib/api";
 import { useSettings } from "@/context/SettingsContext";
 import InfoTooltip from "@/components/ui/info-tooltip";
 
+// Бейдж тональності: вибирає стиль за типом новини
 function SentimentBadge({ s }: { s: string }) {
   if (s === "positive") return <span className="wf-badge-positive">Позитивний</span>;
   if (s === "negative") return <span className="wf-badge-negative">Негативний</span>;
   return <span className="wf-badge-neutral">Нейтральний</span>;
 }
 
+// Бейдж рівня активності розробників
 function ActivityBadge({ a }: { a: string }) {
   if (a === "high") return <span className="wf-badge-positive">Висока активність</span>;
   if (a === "medium") return <span className="wf-badge-neutral">Середня активність</span>;
   return <span className="wf-badge-negative">Низька активність</span>;
 }
 
+// Універсальна заглушка для завантаження
 function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`bg-muted animate-pulse rounded-lg ${className}`} />;
 }
 
+// Базовий клас картки для уніфікації стилів
 const CARD = "bg-card rounded-xl border border-border shadow-sm p-5 space-y-4 min-w-0";
 
 export default function Dashboard() {
+  // Отримуємо тікер з URL, дефолт — AAPL
   const params = useParams<{ ticker: string }>();
   const ticker = params.ticker?.toUpperCase() || "AAPL";
   const { settings, formatPrice } = useSettings(); 
+  
+  // Період графіка синхронізується з глобальними налаштуваннями
   const [period, setPeriod] = useState<"7" | "14" | "30">(settings.period as "7" | "14" | "30");
   useEffect(() => {
    setPeriod(settings.period as "7" | "14" | "30");
    }, [settings.period]);
+   
+  // Фільтр новин за тональністю + ключ для примусового рефечу
   const [newsFilter, setNewsFilter] = useState<"all" | "positive" | "negative" | "neutral">("all");
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Запит даних дашборду: кеш 20 хв, 1 повтор при помилці, рефеч при зміні періоду/тікера
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["dashboard", ticker, period, refreshKey],
     queryFn: () =>
@@ -49,15 +60,18 @@ export default function Dashboard() {
     retry: 1,
   });
 
+  // Фільтрація новин за обраним типом тональності
   const filteredNews =
     data?.news.data.filter((n) => newsFilter === "all" || n.sentiment_label === newsFilter) ?? [];
 
+  // Підготовка даних для графіка цін: дата + ціна закриття
   const priceChartData =
     data?.prices.data.map((p) => ({
       date: p.date.slice(5),
       price: p.close,
     })) ?? [];
 
+  // Маппінг періодів для кнопок та фільтри новин
   const PERIOD_LABELS: Record<string, string> = { "7": "7 днів", "14": "14 днів", "30": "30 днів" };
   const NEWS_FILTERS = [
     { key: "all", label: "Всі" },
@@ -69,7 +83,7 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="space-y-5">
-        {/* Header */}
+        {/* Хедер: назва активу, поточна ціна, зміна, час оновлення + кнопки дій */}
         <div className={CARD}>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -113,6 +127,7 @@ export default function Dashboard() {
                         <InfoTooltip text="Відсоткова зміна ціни активу відносно попередньої торгової сесії." />
                       </div>
                     )}
+                    {/* Форматування дати оновлення даних */}
                     <span className="text-xs text-muted-foreground">
                       {(() => {
                         const d = new Date(data!.updated_at);
@@ -129,6 +144,7 @@ export default function Dashboard() {
                 </>
               )}
             </div>
+            {/* Кнопки: оновлення даних + експорт CSV */}
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => {
@@ -152,13 +168,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Price Chart */}
+        {/* Графік цін: AreaChart з градієнтною заливкою */}
         <div className={CARD}>
           <div className="flex items-center justify-between flex-wrap gap-2">
             <p className="text-base font-semibold flex items-center">
               Динаміка зміни ціни активу за {PERIOD_LABELS[period]}
               <InfoTooltip text="Графік показує зміну вартості активу за вибраний період часу." />
             </p>
+            {/* Перемикач періодів: 7/14/30 днів */}
             <div className="flex gap-1">
               {(["7", "14", "30"] as const).map((p) => (
                 <button
@@ -184,6 +201,7 @@ export default function Dashboard() {
           ) : priceChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={180}>
               <AreaChart data={priceChartData} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
+                {/* Градієнт для заливки під лінією */}
                 <defs>
                   <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.15} />
@@ -234,7 +252,7 @@ export default function Dashboard() {
           ) : null}
         </div>
 
-        {/* News & Sentiment */}
+        {/* Блок новин: середня тональність + фільтри + список */}
         <div className={CARD}>
           <div className="flex items-start justify-between flex-wrap gap-3">
             <div>
@@ -246,6 +264,7 @@ export default function Dashboard() {
                 <Skeleton className="h-8 w-40" />
               ) : (
                 <div className="flex items-center gap-3 flex-wrap">
+                  {/* Велика цифра середньої тональності з кольором за знаком */}
                   <span
                     className={`text-2xl font-bold font-mono ${
                       (data?.news?.avg_sentiment ?? 0) > 0.2
@@ -266,6 +285,7 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+            {/* Фільтри новин за тональністю */}
             <div className="flex gap-1 flex-wrap">
               {NEWS_FILTERS.map((f) => (
                 <button
@@ -283,6 +303,7 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Попередження, якщо не налаштовано API-ключ для новин */}
           {data?.noNewsApiKey && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700">
               Ключ News API не налаштовано. Додайте секрет{" "}
@@ -290,6 +311,7 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* Список новин: заглушка / порожньо / картки новин */}
           {isLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
@@ -326,6 +348,7 @@ export default function Dashboard() {
                       <span className="whitespace-nowrap">{n.published_at.slice(0, 10)}</span>
                     </div>
                   </div>
+                  {/* Бейдж тональності + числове значення оцінки */}
                   <div className="flex items-center gap-2 shrink-0">
                     <SentimentBadge s={n.sentiment_label} />
                     <span
@@ -347,11 +370,11 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Correlation */}
+        {/* Кореляція: ComposedChart (стовпчики настрою + лінія зміни ціни) */}
         <div className={CARD}>
           <p className="text-base font-semibold flex items-center">
-            Взаємозв’язок новинного настрою та зміни ціни
-            <InfoTooltip text="Графік показує взаємозв’язок між середнім новинним настроєм та зміною ціни активу за днями. Стовпчики відображають тональність новин, а лінія – зміну ціни у відсотках. Для оцінки сили зв’язку використовується коефіцієнт кореляції Пірсона: r = cov(X,Y)/(σX·σY). Значення r у діапазоні від -1 до +1: ближче до +1 – сильний прямий зв’язок, ближче до -1 – сильний обернений, близько 0 – слабкий або відсутній зв’язок." />          </p>
+            Взаємозв'язок новинного настрою та зміни ціни
+            <InfoTooltip text="Графік показує взаємозв'язок між середнім новинним настроєм та зміною ціни активу за днями. Стовпчики відображають тональність новин, а лінія – зміну ціни у відсотках. Для оцінки сили зв'язку використовується коефіцієнт кореляції Пірсона: r = cov(X,Y)/(σX·σY). Значення r у діапазоні від -1 до +1: ближче до +1 – сильний прямий зв'язок, ближче до -1 – сильний обернений, близько 0 – слабкий або відсутній зв'язок." />          </p>
           {isLoading ? (
             <Skeleton className="h-36 w-full" />
           ) : data?.correlation.chart_data && data.correlation.chart_data.length > 0 ? (
@@ -373,6 +396,7 @@ export default function Dashboard() {
                       style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
                     }}
                   />
+                  {/* Ліва вісь — настрій (-1..+1), права — зміна ціни % */}
                   <YAxis
                     yAxisId="left"
                     tick={{ fontSize: 10 }}
@@ -417,13 +441,14 @@ export default function Dashboard() {
                   />
                 </ComposedChart>
               </ResponsiveContainer>
+              {/* Коефіцієнт кореляції Пірсона + інтерпретація */}
               <div className="flex items-center gap-4 text-sm flex-wrap">
                 <div>
                   <div className="flex items-center gap-1">
                     <span className="text-muted-foreground">
                       Коефіцієнт кореляції (Пірсон):
                     </span>
-                    <InfoTooltip text="Коефіцієнт Пірсона показує, наскільки зміни новинного настрою пов’язані зі змінами ціни активу. Значення > 0 означає, що позитивні новини зазвичай супроводжуються зростанням ціни, < 0 – зниженням." />                  </div>
+                    <InfoTooltip text="Коефіцієнт Пірсона показує, наскільки зміни новинного настрою пов'язані зі змінами ціни активу. Значення > 0 означає, що позитивні новини зазвичай супроводжуються зростанням ціни, < 0 – зниженням." />                  </div>
                   <span className="font-mono font-semibold">
                     {data.correlation.coefficient != null
                       ? `${data.correlation.coefficient > 0 ? "+" : ""}${data.correlation.coefficient.toFixed(2)}`
@@ -451,7 +476,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* GitHub */}
+        {/* GitHub-активність: тільки для криптовалют */}
         {!isLoading && (
           <div className={CARD}>
             <p className="text-base font-semibold flex items-center">
@@ -502,7 +527,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* AI Report */}
+        {/* AI-звіт: текстовий підсумок аналітики */}
         <div className={CARD}>
           <p className="text-base font-semibold flex items-center">
             Аналітичний звіт
@@ -533,6 +558,7 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* Посилання на детальну сторінку активу */}
         <div className="text-center pb-2">
           <Link href={`/asset/${ticker}/info`}>
             <span className="text-sm text-primary hover:underline cursor-pointer">

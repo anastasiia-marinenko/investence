@@ -1,3 +1,4 @@
+// Імпорти типів для сповіщень
 import * as React from "react"
 
 import type {
@@ -5,9 +6,11 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
+// Ліміт одночасно відображуваних тостів + затримка перед видаленням
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
 
+// Розширений тип тосту з id, заголовком, описом та дією
 type ToasterToast = ToastProps & {
   id: string
   title?: React.ReactNode
@@ -15,6 +18,7 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement
 }
 
+// Типи дій для редюсера — стандартний набір для черги сповіщень
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
   UPDATE_TOAST: "UPDATE_TOAST",
@@ -22,8 +26,10 @@ const actionTypes = {
   REMOVE_TOAST: "REMOVE_TOAST",
 } as const
 
+// Лічильник для генерації унікальних id
 let count = 0
 
+// Генерує унікальний id, обертаючи лічильник при переповненні
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER
   return count.toString()
@@ -31,6 +37,7 @@ function genId() {
 
 type ActionType = typeof actionTypes
 
+// Union-тип для всіх можливих екшенів редюсера
 type Action =
   | {
       type: ActionType["ADD_TOAST"]
@@ -49,12 +56,15 @@ type Action =
       toastId?: ToasterToast["id"]
     }
 
+// Структура стану: масив активних тостів
 interface State {
   toasts: ToasterToast[]
 }
 
+// Мапа таймерів для відкладеного видалення тостів
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
+// Додає тост у чергу на видалення після затримки
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
     return
@@ -71,15 +81,18 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout)
 }
 
+// Редюсер: обробка екшенів для оновлення стану черги тостів
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
+      // Додає новий тост на початок, обрізає зайві за лімітом
       return {
         ...state,
         toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
       }
 
     case "UPDATE_TOAST":
+      // Оновлює поля існуючого тосту за id
       return {
         ...state,
         toasts: state.toasts.map((t) =>
@@ -90,6 +103,7 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
+      // Запускає таймер видалення для конкретного або всіх тостів
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -98,6 +112,7 @@ export const reducer = (state: State, action: Action): State => {
         })
       }
 
+      // Закриває тост візуально (open: false)
       return {
         ...state,
         toasts: state.toasts.map((t) =>
@@ -111,6 +126,7 @@ export const reducer = (state: State, action: Action): State => {
       }
     }
     case "REMOVE_TOAST":
+      // Повністю видаляє тост зі стану за id
       if (action.toastId === undefined) {
         return {
           ...state,
@@ -124,10 +140,13 @@ export const reducer = (state: State, action: Action): State => {
   }
 }
 
+// Список підписників на зміни стану (для синхронізації компонентів)
 const listeners: Array<(state: State) => void> = []
 
+// Поточний стан у пам'яті — єдине джерело істини
 let memoryState: State = { toasts: [] }
 
+// Централізована функція диспетчеризації екшенів + нотифікація підписників
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action)
   listeners.forEach((listener) => {
@@ -135,8 +154,10 @@ function dispatch(action: Action) {
   })
 }
 
+// Тип для створення нового тосту (без id — він генерується автоматично)
 type Toast = Omit<ToasterToast, "id">
 
+// Функція для створення тосту: генерує id, додає в чергу, повертає контроли
 function toast({ ...props }: Toast) {
   const id = genId()
 
@@ -166,10 +187,12 @@ function toast({ ...props }: Toast) {
   }
 }
 
+// Хук для підписки на стан тостів у компонентах
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
+    // Підписка на зміни стану + очищення при розмонтуванні
     listeners.push(setState)
     return () => {
       const index = listeners.indexOf(setState)
@@ -186,4 +209,5 @@ function useToast() {
   }
 }
 
+// Експорт хука та функції створення тостів для використання в додатку
 export { useToast, toast }

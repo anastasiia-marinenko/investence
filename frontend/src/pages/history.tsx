@@ -1,19 +1,23 @@
+// Імпорти хуків, роутера, запитів та типів
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
 import { apiFetch, type HistoryItem } from "@/lib/api";
 
+// Бейдж тональності: вибирає стиль за типом (позитив/негатив/нейтраль)
 function SentimentBadge({ s }: { s: string | null }) {
   if (s === "positive") return <span className="wf-badge-positive">Позитивний</span>;
   if (s === "negative") return <span className="wf-badge-negative">Негативний</span>;
   return <span className="wf-badge-neutral">Нейтральний</span>;
 }
 
+// Заглушка для імітації завантаження
 function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`bg-muted animate-pulse rounded-lg ${className}`} />;
 }
 
+// Модальне вікно підтвердження для небезпечних дій (очищення історії)
 function ConfirmDialog({
   onConfirm,
   onCancel,
@@ -46,6 +50,7 @@ function ConfirmDialog({
   );
 }
 
+// Форматує ISO-дату у YYYY-MM-DD для відображення в таблиці
 function formatDate(iso: string) {
   const d = new Date(iso);
   const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -56,45 +61,49 @@ function formatDate(iso: string) {
 
 export default function History() {
   const [, navigate] = useLocation();
+  // Стан для показу/приховування діалогу підтвердження
   const [showConfirm, setShowConfirm] = useState(false);
   const qc = useQueryClient();
 
-const clearMutation = useMutation({
-  mutationFn: async () => {
-    const apiBase = import.meta.env.VITE_API_URL || '/api';
-    const res = await fetch(`${apiBase}/assets`, {
-      method: "DELETE",
-    });
+  // Мутація для DELETE-запиту очищення історії + інвалідація кешу після успіху
+  const clearMutation = useMutation({
+    mutationFn: async () => {
+      const apiBase = import.meta.env.VITE_API_URL || '/api';
+      const res = await fetch(`${apiBase}/assets`, {
+        method: "DELETE",
+      });
 
-    if (!res.ok) {
-      throw new Error("Не вдалося очистити історію");
-    }
+      if (!res.ok) {
+        throw new Error("Не вдалося очистити історію");
+      }
 
-    return res.json();
-  },
+      return res.json();
+    },
 
-  onSuccess: () => {
-    qc.invalidateQueries({ queryKey: ["history"] });
-  },
-});
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["history"] });
+    },
+  });
 
-const { data = [], isLoading } = useQuery({
-  queryKey: ["history"],
+  // Запит історії: автооновлення кожні 5 сек, пауза під час очищення
+  const { data = [], isLoading } = useQuery({
+    queryKey: ["history"],
 
-  queryFn: () =>
-    apiFetch<{ count: number; assets: HistoryItem[] }>("/assets").then(
-      (r) => r.assets
-    ),
+    queryFn: () =>
+      apiFetch<{ count: number; assets: HistoryItem[] }>("/assets").then(
+        (r) => r.assets
+      ),
 
-  staleTime: 0,
-  refetchOnWindowFocus: true,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
 
-  refetchInterval: clearMutation.isPending ? false : 5000,
-  refetchIntervalInBackground: true,
-});
+    refetchInterval: clearMutation.isPending ? false : 5000,
+    refetchIntervalInBackground: true,
+  });
 
   return (
     <Layout>
+      {/* Діалог підтвердження: рендериться умовно за станом showConfirm */}
       {showConfirm && (
         <ConfirmDialog
           onConfirm={() => {
@@ -105,6 +114,7 @@ const { data = [], isLoading } = useQuery({
         />
       )}
       <div className="space-y-5">
+        {/* Заголовок + кнопка очищення (блокується під час мутації або за порожньої історії) */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h2 className="text-xl font-bold">Історія аналізів</h2>
           <button
@@ -116,6 +126,7 @@ const { data = [], isLoading } = useQuery({
           </button>
         </div>
 
+        {/* Таблиця історії: обробка станів завантаження, порожнього списку, вивід рядків */}
         <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-3">
           <p className="text-sm font-semibold text-foreground">
             Раніше проаналізовані активи {!isLoading && `(${data.length})`}
@@ -146,6 +157,7 @@ const { data = [], isLoading } = useQuery({
               </thead>
               <tbody>
                 {data.map((a) => (
+                  // Клік по рядку веде на дашборд; stopPropagation для кнопки "Переглянути"
                   <tr
                     key={a.ticker}
                     onClick={() => navigate(`/dashboard/${a.ticker}`)}
@@ -153,6 +165,7 @@ const { data = [], isLoading } = useQuery({
                   >
                     <td className="py-2.5 font-mono font-semibold">{a.ticker}</td>
                     <td className="py-2.5 text-muted-foreground hidden sm:table-cell">{a.name}</td>
+                    {/* Колір оцінки залежить від порогу ±0.2 */}
                     <td
                       className={`py-2.5 text-right font-mono ${
                         (a.sentiment_score ?? 0) > 0.2

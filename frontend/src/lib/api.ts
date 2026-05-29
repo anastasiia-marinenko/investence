@@ -1,14 +1,18 @@
+// Базовий URL для API: змінна середовища або дефолт "/api"
 const BASE = import.meta.env.VITE_API_URL || "/api";
 
+// Універсальна функція запиту: додає BASE, обробляє помилки, парсить JSON
 export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, options);
   if (!res.ok) {
+    // Спроба отримати детальну помилку від бекенду, інакше — статус-код
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error((err as { detail: string }).detail || `HTTP ${res.status}`);
   }
   return res.json();
 }
 
+// Тип даних для сторінки дашборду: ціни, новини, кореляція, GitHub, AI-звіт
 export interface DashboardData {
   ticker: string;
   name: string;
@@ -54,6 +58,7 @@ export interface DashboardData {
   summary: { summary: string; disclaimer: string } | null;
 }
 
+// Базова інформація про актив для сторінки деталей
 export interface AssetInfo {
   ticker: string;
   name: string;
@@ -63,6 +68,7 @@ export interface AssetInfo {
   currency: string;
 }
 
+// Елемент історії аналізів: тікер, назва, тип, останній аналіз
 export interface HistoryItem {
   ticker: string;
   name: string;
@@ -72,12 +78,14 @@ export interface HistoryItem {
   last_analyzed: string;
 }
 
+// Відповідь для сторінки рейтингу (top): категорія + список активів
 export interface TopResponse {
   category: string;
   count: number;
   assets: TopItem[];
 }
 
+// Елемент рейтингу: основні метрики для відображення в таблиці
 export interface TopItem {
   ticker: string;
   name: string;
@@ -88,6 +96,7 @@ export interface TopItem {
   sentiment_label: string | null;
 }
 
+// Елемент новини: структура для списку новин по активу
 export interface NewsItem {
   id: number;
   ticker: string;
@@ -99,6 +108,7 @@ export interface NewsItem {
   sentiment_score: number;
 }
 
+// Зведена аналітика для сторінки /analytics
 export interface AnalyticsData {
   total_assets: number;
   total_news: number;

@@ -1,8 +1,10 @@
+// Імпорти хуків, роутера, обгортки та API-клієнта
 import { useState } from "react";
 import { useLocation } from "wouter";
 import Layout from "@/components/Layout";
 import { apiFetch } from "@/lib/api";
 
+// Список популярних активів для швидкого доступу з головної
 const POPULAR = [
   { ticker: "AAPL", name: "Apple Inc.", isCrypto: false },
   { ticker: "BTC-USD", name: "Bitcoin", isCrypto: true },
@@ -11,6 +13,7 @@ const POPULAR = [
   { ticker: "TSLA", name: "Tesla", isCrypto: false },
 ];
 
+// Блок із трьома ключовими фічами платформи: іконка, заголовок, опис
 const FEATURES = [
   {
     icon: (
@@ -42,11 +45,13 @@ const FEATURES = [
 ];
 
 export default function Home() {
+  // Стани форми: введений тікер, помилка, завантаження
   const [ticker, setTicker] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [, navigate] = useLocation();
 
+  // Обробка аналізу: валідація → запит до API → перехід на дашборд або показ помилки
   async function handleAnalyze(t?: string) {
     const value = (t || ticker).trim().toUpperCase();
     if (!value) {
@@ -72,6 +77,7 @@ export default function Home() {
   return (
     <Layout>
       <div className="max-w-2xl mx-auto space-y-10">
+        {/* Заголовок + короткий опис платформи */}
         <div className="text-center space-y-3 pt-8">
           <h1 className="text-3xl font-bold tracking-tight">Investence</h1>
           <p className="text-muted-foreground text-base">Аналіз інвестиційного настрою на основі штучного інтелекту</p>
@@ -80,6 +86,7 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Форма пошуку: інпут + кнопка, валідація вводу, обробка Enter */}
         <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-3">
           <div className="flex flex-col sm:flex-row gap-2">
             <input
@@ -105,6 +112,7 @@ export default function Home() {
           {error && <p className="text-destructive text-sm">{error}</p>}
         </div>
 
+        {/* Сітка кнопок популярних активів: клік → автозаповнення + запуск аналізу */}
         <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Популярні активи</p>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -127,6 +135,7 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Блок "Що таке Investence": опис + три картки з фічами */}
         <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-5">
           <p className="text-base font-semibold text-foreground">Що таке Investence?</p>
           <p className="text-sm text-muted-foreground leading-relaxed">

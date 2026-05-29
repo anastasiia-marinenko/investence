@@ -1,6 +1,4 @@
-/**
- * Сторінка детальної інформації про актив (/asset/:ticker/info).
- */
+// Імпорти типів, роутера, запитів, контексту та UI-компонентів
 import type { ReactNode } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -8,6 +6,8 @@ import Layout from "@/components/Layout";
 import { apiFetch } from "@/lib/api";
 import { useSettings } from "@/context/SettingsContext";
 import InfoTooltip from "@/components/ui/info-tooltip";
+
+// Тип відповіді бекенду з усіма полями детальної інформації про актив
 interface AssetInfoData {
   ticker: string;
   name: string;
@@ -26,6 +26,7 @@ interface AssetInfoData {
   description: string | null;
 }
 
+// Універсальний рядок таблиці: приховується, якщо значення порожнє
 function Row({
   label,
   value,
@@ -49,14 +50,17 @@ function Row({
   );
 }
 
+// Заглушка для імітації завантаження
 function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`bg-muted animate-pulse rounded-lg ${className}`} />;
 }
 
 export default function AssetInfo() {
+  // Отримуємо тікер з URL, приводимо до верхнього регістру
   const params = useParams<{ ticker: string }>();
   const ticker = params.ticker?.toUpperCase() || "";
 
+  // Запит детальної інформації: кеш 10 хв, тільки якщо є тікер
   const { data, isLoading, error } = useQuery({
     queryKey: ["asset-info", ticker],
     queryFn: () => apiFetch<AssetInfoData>(`/assets/${ticker}/info`),
@@ -70,8 +74,10 @@ export default function AssetInfo() {
     <Layout>
       <div className="max-w-xl mx-auto space-y-5">
 
+        {/* Картка з інформацією про актив */}
         <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-4">
           {isLoading ? (
+            // Скелетон-заглушка під час завантаження
             <div className="space-y-3">
               <Skeleton className="h-7 w-48" />
               <Skeleton className="h-5 w-32" />
@@ -82,12 +88,13 @@ export default function AssetInfo() {
               <Skeleton className="h-4 w-3/4" />
             </div>
           ) : error ? (
+            // Повідомлення про помилку запиту
             <p className="text-sm text-muted-foreground text-center py-6">
               Інформація про актив тимчасово недоступна.
             </p>
           ) : (
             <>
-              {/* Заголовок */}
+              {/* Заголовок: назва, тікер, тип активу, біржа */}
               <div>
                 <h1 className="text-xl font-bold">{data?.name}</h1>
                 <div className="flex items-center gap-3 mt-1.5 flex-wrap">
@@ -101,7 +108,7 @@ export default function AssetInfo() {
                 </div>
               </div>
 
-              {/* Основні показники */}
+              {/* Сітка основних метрик: ціна, зміна, капіталізація тощо */}
               <div>
                 <Row
                   label={
@@ -150,6 +157,7 @@ export default function AssetInfo() {
                   }
                   value={data?.volume}
                 />
+                {/* P/E тільки для акцій, не для крипто */}
                 {!data?.is_crypto && (
                   <Row
                   label={
@@ -212,7 +220,7 @@ export default function AssetInfo() {
               />
               </div>
 
-              {/* Опис */}
+              {/* Текстовий опис компанії або криптопроєкту */}
               {data?.description && (
                 <div className="pt-1 space-y-2">
                   <p className="text-sm font-semibold text-foreground">
@@ -227,6 +235,7 @@ export default function AssetInfo() {
           )}
         </div>
 
+        {/* Посилання на повний дашборд для глибшого аналізу */}
         <div className="text-center">
           <Link href={`/dashboard/${ticker}`}>
             <span className="text-sm text-primary hover:underline cursor-pointer">

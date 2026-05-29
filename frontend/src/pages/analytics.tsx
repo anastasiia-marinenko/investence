@@ -1,7 +1,4 @@
-/**
- * Сторінка загальної аналітики (/analytics).
- * Відображає зведену статистику, діаграми та топ-5 таблиці.
- */
+// Імпорти типів, хуків, графіків та компонентів
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -15,8 +12,7 @@ import { apiFetch } from "@/lib/api";
 import { useSettings } from "@/context/SettingsContext";
 import InfoTooltip from "@/components/ui/info-tooltip";
 
-// Тип відповіді бекенду
-
+// Структура відповіді від бекенду — всі дані для сторінки аналітики
 interface AnalyticsResponse {
   has_data: boolean;
   message: string | null;
@@ -50,15 +46,17 @@ interface AnalyticsResponse {
   };
 }
 
-// Допоміжні компоненти
-
+// Заглушка для стану завантаження — анімований сірий блок
 function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`bg-muted animate-pulse rounded-lg ${className}`} />;
 }
 
+// Спільні стилі для карток, щоб не дублювати класи
 const CARD = "bg-card rounded-xl border border-border shadow-sm p-5 space-y-4";
+// Фіксовані кольори для секторів кругової діаграми
 const PIE_COLORS = { positive: "#22c55e", negative: "#ef4444", neutral: "#a1a1aa" };
 
+// Повертає Tailwind-клас кольору тексту залежно від значення тональності
 function sentimentColor(score: number | null) {
   if (score == null) return "text-gray-500";
   if (score > 0.2) return "text-green-600";
@@ -66,6 +64,7 @@ function sentimentColor(score: number | null) {
   return "text-gray-500";
 }
 
+// Міні-прогресбар для візуалізації сили тональності
 function SentimentBar({ score }: { score: number | null }) {
   const v = Math.min(100, Math.abs((score ?? 0) * 100));
   const color = (score ?? 0) > 0.2 ? "bg-green-500" : (score ?? 0) < -0.2 ? "bg-red-500" : "bg-gray-400";
@@ -76,11 +75,11 @@ function SentimentBar({ score }: { score: number | null }) {
   );
 }
 
-// Головний компонент
-
+// Головний компонент сторінки
 export default function Analytics() {
   const [, navigate] = useLocation();
 
+  // Запит даних: автооновлення кожні 10 сек, навіть у фоновому режимі
   const { data, isLoading } = useQuery({
     queryKey: ["analytics"],
     queryFn: () => apiFetch<AnalyticsResponse>("/analytics"),
@@ -94,7 +93,7 @@ export default function Analytics() {
 
   const { formatPrice } = useSettings();
 
-  // Кругова діаграма
+  // Підготовка даних для PieChart — фільтруємо категорії з нульовою кількістю
   const pieData = data ? [
     { name: "Позитивний", value: data.sentiment_distribution.positive_count, color: PIE_COLORS.positive },
     { name: "Негативний", value: data.sentiment_distribution.negative_count, color: PIE_COLORS.negative },
@@ -103,6 +102,7 @@ export default function Analytics() {
 
   const totalSentNews = data?.sentiment_distribution.total ?? 0;
 
+  // Тип для карток зі зведеною статистикою
   type StatCard = {
     id: string;
     label: ReactNode;
@@ -110,7 +110,7 @@ export default function Analytics() {
     color: string;
   };
 
-  // Картки зведеної статистики
+  // Конфігурація карток: лейбли, динамічні значення, кольори
   const statCards: StatCard[] = [
     {
       id: "total_assets",
@@ -185,7 +185,7 @@ export default function Analytics() {
       <div className="space-y-6">
         <h2 className="text-xl font-bold text-center">Загальна аналітика</h2>
 
-        {/*  Зведена статистика  */}
+        {/* Сітка карток зі зведеною статистикою */}
         <div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {statCards.map((s) => (
@@ -199,6 +199,7 @@ export default function Analytics() {
               </div>
             ))}
           </div>
+          {/* Повідомлення, якщо бекенд ще не зібрав дані */}
           {!isLoading && !hasData && (
             <p className="text-sm text-muted-foreground text-center py-4 mt-2">
               Даних для аналітики поки немає. Почніть аналіз активів на головній сторінці.
@@ -206,9 +207,9 @@ export default function Analytics() {
           )}
         </div>
 
-        {/*  Новини  */}
+        {/* Блок новин: діаграми + таблиця */}
         <div className="space-y-4">
-          {/* Кругова діаграма */}
+          {/* Кругова діаграма розподілу новин за тональністю */}
           <div className={CARD}>
             <div className="flex items-center gap-1">
               <p className="text-sm font-semibold text-foreground">
@@ -226,6 +227,7 @@ export default function Analytics() {
                       <Cell key={entry.name} fill={entry.color} />
                     ))}
                   </Pie>
+                  {/* Підказка з кількістю та відсотком для сектора */}
                   <Tooltip
                     formatter={(value: number, name: string) => [
                       `${value} новин (${totalSentNews > 0 ? ((value / totalSentNews) * 100).toFixed(1) : 0}%)`,
@@ -233,6 +235,7 @@ export default function Analytics() {
                     ]}
                     contentStyle={{ fontSize: 12, borderRadius: 8 }}
                   />
+                  {/* Легенда з кастомним форматуванням: назва + відсоток + кількість */}
                   <Legend
                     layout="vertical" align="right" verticalAlign="middle"
                     formatter={(value, entry: { payload?: { value?: number } }) => {
@@ -253,7 +256,7 @@ export default function Analytics() {
             )}
           </div>
 
-          {/* Стовпчаста діаграма активності новин */}
+          {/* Стовпчаста діаграма: кількість новин за останні 7 днів */}
           <div className={CARD}>
             <div className="flex items-center gap-1">
               <p className="text-sm font-semibold text-foreground">
@@ -300,7 +303,7 @@ export default function Analytics() {
             )}
           </div>
 
-          {/* Топ-5 за тональністю */}
+          {/* Таблиця топ-5 активів за тональністю новин */}
           <div className={CARD}>
             <div className="flex items-center gap-1">
               <p className="text-sm font-semibold text-foreground">
@@ -340,12 +343,14 @@ export default function Analytics() {
                 </thead>
                 <tbody>
                   {data.top5.by_sentiment.map((a, i) => (
+                    // Клік по рядку веде на дашборд активу
                     <tr key={a.ticker} onClick={() => navigate(`/dashboard/${a.ticker}`)}
                       className="border-b border-border/50 hover:bg-accent/50 cursor-pointer transition-colors"
                     >
                       <td className="py-2.5 text-muted-foreground text-xs">{i + 1}</td>
                       <td className="py-2.5 font-mono font-semibold">{a.ticker}</td>
                       <td className="py-2.5 text-muted-foreground hidden sm:table-cell text-xs">{a.name}</td>
+                      {/* Колір оцінки залежить від порогу ±0.2 */}
                       <td className={`py-2.5 text-right font-mono font-semibold ${sentimentColor(a.sentiment_score)}`}>
                         {a.sentiment_score != null
                           ? `${a.sentiment_score > 0 ? "+" : ""}${a.sentiment_score.toFixed(2)}`
@@ -364,9 +369,9 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/*  Цінові дані  */}
+        {/* Блок цінових даних: графік + таблиця */}
         <div className="space-y-4">
-          {/* Лінійний графік цінової зміни */}
+          {/* Лінійний графік середньої зміни цін за 7 днів */}
           <div className={CARD}>
             <div className="flex items-center gap-1">
               <p className="text-sm font-semibold text-foreground">
@@ -410,6 +415,7 @@ export default function Analytics() {
                     formatter={(v: number) => [`${v.toFixed(2)}%`, "Середня зміна"]}
                     contentStyle={{ fontSize: 11, borderRadius: 8 }}
                   />
+                  {/* Кастомні точки: зелений для зростання, червоний для падіння */}
                   <Line
                     type="monotone"
                     dataKey="avg_change_pct"
@@ -429,7 +435,7 @@ export default function Analytics() {
             )}
           </div>
 
-          {/* Топ-5 за ціновою зміною */}
+          {/* Таблиця топ-5 активів за ціновою динамікою */}
           <div className={CARD}>
             <p className="text-sm font-semibold text-foreground">Топ-5 активів за ціновою зміною</p>
             {isLoading ? (
@@ -473,6 +479,7 @@ export default function Analytics() {
                       <td className="py-2.5 text-right font-mono">
                         {formatPrice(a.current_price)}
                       </td>
+                      {/* Колір зміни: зелений для +, червоний для - */}
                       <td className={`py-2.5 text-right font-mono font-semibold ${
                         (a.change_day_pct ?? 0) >= 0 ? "text-green-600" : "text-red-600"
                       }`}>
@@ -495,7 +502,7 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/* GitHub-активність - горизонтальний барчарт */}
+        {/* GitHub-активність: горизонтальний барчарт для крипто-активів */}
         <div className={CARD}>
           <div className="flex items-center gap-1">
             <p className="text-sm font-semibold text-foreground">
@@ -508,6 +515,7 @@ export default function Analytics() {
           ) : (data?.charts.github_activity ?? []).length > 0 ? (
             <ResponsiveContainer
               width="100%"
+              // Висота адаптується під кількість елементів
               height={Math.max(120, (data!.charts.github_activity.length * 40))}
             >
               <BarChart
@@ -557,7 +565,7 @@ export default function Analytics() {
           )}
         </div>
 
-          {/* Топ-5 за GitHub */}
+          {/* Таблиця топ-5 активів за GitHub-активністю */}
           <div className={CARD}>
             <div className="flex items-center gap-1">
               <p className="text-sm font-semibold text-foreground">
@@ -613,6 +621,7 @@ export default function Analytics() {
                       <td className="py-2.5 text-right font-mono">{a.total_stars.toLocaleString()}</td>
                       <td className="py-2.5 text-center font-mono">{a.commits_last_month}</td>
                       <td className="py-2.5 text-right">
+                        {/* Бейдж рівня активності: high/medium/low з відповідним кольором */}
                         <div className="flex items-center justify-end gap-1">
                           <span
                             className={`text-xs px-2 py-0.5 rounded-full font-medium border ${

@@ -1,12 +1,15 @@
+// Імпорти роутера для навігації та обгортки Layout
 import { useLocation } from "wouter";
 import Layout from "@/components/Layout";
 
+// Компонент сторінки 404: відображається для неіснуючих маршрутів або невалідних тікерів
 export default function Error404() {
   const [, navigate] = useLocation();
 
   return (
     <Layout>
       <div className="max-w-md mx-auto text-center space-y-6 pt-16">
+        {/* Картка помилки: великий код статусу, заголовок, опис та список можливих причин */}
         <div className="bg-card rounded-xl border border-border shadow-sm p-8 space-y-4">
           <div className="text-6xl font-bold font-mono text-muted-foreground">404</div>
           <h2 className="text-xl font-semibold">Сторінку не знайдено</h2>
@@ -14,6 +17,7 @@ export default function Error404() {
             Схоже, ця сторінка не існує або актив не знайдено.
           </p>
 
+          {/* Блок із типовими причинами помилки для кращого розуміння користувачем */}
           <div className="border-t border-border pt-4 text-sm text-left">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               Поширені причини
@@ -26,6 +30,7 @@ export default function Error404() {
             </ul>
           </div>
 
+          {/* Кнопки навігації: повернення на головну або назад у браузері */}
           <div className="flex flex-col gap-2 pt-2">
             <button
               onClick={() => navigate("/")}

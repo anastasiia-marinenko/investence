@@ -1,7 +1,9 @@
+// Імпорти хуків для навігації та контексту налаштувань
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useSettings } from "@/context/SettingsContext";
 
+// Масив навігаційних посилень для меню
 const navLinks = [
   { href: "/", label: "Головна" },
   { href: "/top", label: "Рейтинг" },
@@ -11,6 +13,7 @@ const navLinks = [
   { href: "/history", label: "Історія" },
 ];
 
+// Іконки для UI: сонце/місяць для теми, шестерня для налаштувань, бургер для мобільного меню
 function SunIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -58,20 +61,25 @@ function CloseIcon() {
   );
 }
 
+// Обгортка сторінки: хедер з навігацією, основний контент, футер
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { settings, save } = useSettings();
+  // Стан для відкриття/закриття мобільного меню
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Перемикання теми: світла ↔ темна
   function toggleTheme() {
     save({ theme: settings.theme === "light" ? "dark" : "light" });
   }
 
+  // Перевірка активності посилання: для "/" — точний збіг, для інших — startsWith
   const isActive = (href: string) =>
     href === "/" ? location === "/" : location.startsWith(href);
 
   return (
       <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
+      {/* Хедер: логотип, навігація (desktop), кнопки теми та налаштувань, мобільне меню */}
       <header className="border-b border-border bg-card sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/">
@@ -80,7 +88,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
 
-          {/* Desktop nav */}
+          {/* Desktop навігація: прихована на мобільних */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => (
               <Link key={link.href} href={link.href}>
@@ -97,6 +105,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
 
+          {/* Desktop кнопки: тема + налаштування */}
           <div className="hidden md:flex items-center gap-1">
             <button
               onClick={toggleTheme}
@@ -119,7 +128,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
 
-          {/* Mobile: theme + hamburger */}
+          {/* Мобільні кнопки: тема + бургер-меню */}
           <div className="md:hidden flex items-center gap-1">
             <button
               onClick={toggleTheme}
@@ -136,7 +145,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* Mobile menu */}
+        {/* Мобільне меню: випадає при кліку на бургер */}
         {mobileOpen && (
           <div className="md:hidden border-t border-border bg-card">
             <nav className="flex flex-col px-4 py-2">
@@ -167,8 +176,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         )}
       </header>
 
+      {/* Основний контент: центровано, з адаптивними відступами */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-8 overflow-x-hidden min-w-0">{children}</main>
 
+      {/* Футер: логотип, посилання на GitHub, дисклеймер */}
       <footer className="border-t border-border bg-card mt-auto">
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

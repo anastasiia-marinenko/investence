@@ -1,6 +1,9 @@
 """
 API ендпоінти для роботи з активами.
 """
+import yfinance as yf
+import requests
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -17,6 +20,16 @@ from app.processing.sentiment_analyzer import SentimentAnalyzer
 from app.processing.correlation_engine import CorrelationEngine
 from app.processing.summary_generator import SummaryGenerator
 from app.processing.cache_manager import CacheManager
+from app.models.models import News
+from app.collectors.price_collector import PriceCollector
+from app.collectors.news_collector import NewsCollector
+from app.processing.sentiment_analyzer import SentimentAnalyzer
+from app.collectors.github_collector import GitHubCollector
+from app.processing.correlation_engine import CorrelationEngine
+from app.processing.summary_generator import SummaryGenerator
+from sqlalchemy import func
+
+
 
 router = APIRouter(prefix="/api/assets", tags=["assets"])
 
@@ -319,7 +332,6 @@ def analyze_sentiment(ticker: str, db: Session = Depends(get_db)):
         )
 
     # Отримуємо всі непроаналізовані новини
-    from app.models.models import News
     unanalyzed = db.query(News).filter(
         News.asset_id == asset.id,
         News.is_analyzed == False
@@ -480,9 +492,6 @@ def get_asset_info(ticker: str, db: Session = Depends(get_db)):
     
     - **ticker**: тікер-символ активу (наприклад AAPL або BTC-USD)
     """
-    import yfinance as yf
-    import requests
-    import logging
     _logger = logging.getLogger(__name__)
 
     ticker_upper = ticker.upper().strip()
@@ -820,7 +829,6 @@ def get_dashboard(
     asset = db.query(Asset).filter(Asset.ticker == ticker_upper).first()
     if not asset:
         # Спробуємо валідувати та зберегти
-        from app.collectors.asset_search import validate_and_save_asset
         asset = validate_and_save_asset(ticker_upper, db)
 
     if not asset:
@@ -843,7 +851,6 @@ def get_dashboard(
         prices_source = "cache"
         prices_data = cached_prices
     else:
-        from app.collectors.price_collector import PriceCollector
         collector = PriceCollector()
         prices_data = collector.collect_and_save(ticker_upper, asset, db, days)
         prices_source = "live"
@@ -854,7 +861,6 @@ def get_dashboard(
         news_source = "cache"
         news_data = cached_news
     else:
-        from app.collectors.news_collector import NewsCollector
         news_collector = NewsCollector()
         news_data = news_collector.collect_and_save(ticker_upper, asset, db)
         news_source = "live"
@@ -863,7 +869,6 @@ def get_dashboard(
     if news_data:
         unanalyzed = [n for n in news_data if not n.is_analyzed]
         if unanalyzed:
-            from app.processing.sentiment_analyzer import SentimentAnalyzer
             analyzer = SentimentAnalyzer()
             analyzer.analyze_news_batch(unanalyzed, db)
             # Оновлюємо список новин після аналізу
@@ -876,12 +881,10 @@ def get_dashboard(
         if cached_github is not None:
             github_data = cached_github
         else:
-            from app.collectors.github_collector import GitHubCollector
             github_collector = GitHubCollector()
             github_data = github_collector.collect_and_save(ticker_upper, asset, db)
 
     # 5. Кореляційний аналіз
-    from app.processing.correlation_engine import CorrelationEngine
     correlation_engine = CorrelationEngine()
     correlation = correlation_engine.calculate(asset, db, days=14)
     correlation_engine.save_daily_scores(asset, db, days=14)
@@ -896,7 +899,6 @@ def get_dashboard(
             "llm_available": True,
         }
     else:
-        from app.processing.summary_generator import SummaryGenerator
         generator = SummaryGenerator()
         summary_result = generator.generate(asset, db)
 
@@ -1004,7 +1006,6 @@ def get_history(db: Session = Depends(get_db)):
     Повертає список всіх раніше проаналізованих активів.
     Використовується сторінкою /history фронтенду.
     """
-    from sqlalchemy import func
 
     assets = db.query(Asset).filter(or_(Asset.is_hidden == False, Asset.is_hidden == None)).order_by(Asset.updated_at.desc()).all()
 

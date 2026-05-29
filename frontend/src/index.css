@@ -1,8 +1,11 @@
+/* Підключення ядра Tailwind CSS v4 та бібліотеки кастомних анімацій */
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Кастомний варіант: активує темну тему, коли будь-який батьківський елемент має клас .dark */
 @custom-variant dark (&:is(.dark *));
 
+/* Реєстрація CSS-змінних як вбудованих токенів Tailwind для прямого використання в утилітах */
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -34,6 +37,7 @@
   --radius-lg: var(--radius);
 }
 
+/* Світла тема: базова палітра HSL-значень для кольорів, шрифтів та радіусів */
 :root {
   --background: 210 20% 97%;
   --foreground: 222 47% 11%;
@@ -56,6 +60,7 @@
   --radius: 0.5rem;
 }
 
+/* Темна тема: перевизначення палітри під темний режим інтерфейсу */
 .dark {
   --background: 222 47% 9%;
   --foreground: 210 40% 96%;
@@ -76,24 +81,28 @@
   --ring: 221 83% 60%;
 }
 
+/* Глобальні базові стилі: уніфіковані бордери та типографіка body */
 @layer base {
   * { @apply border-border; }
   body { @apply font-sans antialiased bg-background text-foreground; }
 }
 
+/* Утиліти для бейджів тональності (стандартні назви) */
 .badge-positive { @apply bg-green-50 text-green-700 border border-green-200 text-xs px-2.5 py-0.5 rounded-full font-medium; }
 .badge-negative { @apply bg-red-50 text-red-700 border border-red-200 text-xs px-2.5 py-0.5 rounded-full font-medium; }
 .badge-neutral  { @apply bg-gray-100 text-gray-600 border border-gray-200 text-xs px-2.5 py-0.5 rounded-full font-medium; }
 
+/* Дублікати з префіксом wf для сумісності з іншими частинами інтерфейсу */
 .wf-badge-positive { @apply bg-green-50 text-green-700 border border-green-200 text-xs px-2.5 py-0.5 rounded-full font-medium; }
 .wf-badge-negative { @apply bg-red-50 text-red-700 border border-red-200 text-xs px-2.5 py-0.5 rounded-full font-medium; }
 .wf-badge-neutral  { @apply bg-gray-100 text-gray-600 border border-gray-200 text-xs px-2.5 py-0.5 rounded-full font-medium; }
 
+/* Базовий клас картки для уніфікації вигляду контейнерів */
 .card { @apply bg-card rounded-xl border border-border shadow-sm; }
 
-/* Мобільна адаптивність */
+/* Адаптація під вузькі екрани (до 375px, наприклад iPhone SE) */
 @media (max-width: 375px) {
-  /* Графіки */
+  /* Графіки: запобігання обрізанню осей та підписів */
   .recharts-wrapper {
     max-width: 100% !important;
   }
@@ -101,14 +110,14 @@
     overflow: visible;
   }
 
-  /* Таблиці */
+  /* Таблиці: увімкнення горизонтального скролу замість стиснення колонок */
   table {
     display: block;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Бейджі тональності */
+  /* Компактні бейджі тональності для економії місця */
   .wf-badge-positive,
   .wf-badge-negative,
   .wf-badge-neutral {
@@ -116,7 +125,7 @@
     padding: 1px 6px !important;
   }
 
-  /* Кнопки фільтрів */
+  /* Зменшення кнопок фільтрів для зручності на вузькому екрані */
   .flex.gap-1 > button {
     font-size: 10px;
     padding: 2px 6px;

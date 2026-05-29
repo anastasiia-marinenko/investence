@@ -1,9 +1,11 @@
+// Підключення роутера, кешування запитів, UI-компонентів та контексту
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SettingsProvider } from "@/context/SettingsContext";
 
+// Імпорти всіх сторінок
 import Home from "@/pages/home";
 import Dashboard from "@/pages/dashboard";
 import Compare from "@/pages/compare";
@@ -15,8 +17,10 @@ import History from "@/pages/history";
 import Settings from "@/pages/settings";
 import Error404 from "@/pages/error-404";
 
+// Ініціалізація клієнта для кешування та повторних запитів
 const queryClient = new QueryClient();
 
+// Мапа маршрутів: прив'язка шляхів до відповідних компонентів
 function Router() {
   return (
     <Switch>
@@ -36,6 +40,7 @@ function Router() {
   );
 }
 
+// Кореневий компонент: послідовно огортає додаток у провайдери стану, налаштувань, тултіпів та сповіщень
 function App() {
   return (
     <QueryClientProvider client={queryClient}>

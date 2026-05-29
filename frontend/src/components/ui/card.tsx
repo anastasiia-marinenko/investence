@@ -1,3 +1,4 @@
+// Базовий контейнер картки: рамка, фон, тінь, заокруглені кути
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -15,8 +16,10 @@ const Card = React.forwardRef<
     {...props}
   />
 ))
+// Ім'я для React DevTools (зручно при дебазі)
 Card.displayName = "Card"
 
+// Верхня секція: вертикальний стек з відступами між елементами
 const CardHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -29,6 +32,7 @@ const CardHeader = React.forwardRef<
 ))
 CardHeader.displayName = "CardHeader"
 
+// Заголовок: напівжирний шрифт, компактний трекинг, без міжрядкових проміжків
 const CardTitle = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -41,6 +45,7 @@ const CardTitle = React.forwardRef<
 ))
 CardTitle.displayName = "CardTitle"
 
+// Підзаголовок/опис: дрібний приглушений текст
 const CardDescription = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -53,6 +58,7 @@ const CardDescription = React.forwardRef<
 ))
 CardDescription.displayName = "CardDescription"
 
+// Основний контент: внутрішні відступи, pt-0 щоб уникнути подвійного відступу з хедером
 const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -61,6 +67,7 @@ const CardContent = React.forwardRef<
 ))
 CardContent.displayName = "CardContent"
 
+// Нижня секція: горизонтальне вирівнювання елементів (кнопки, посилання, дії)
 const CardFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
