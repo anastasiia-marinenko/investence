@@ -87,15 +87,24 @@
   body { @apply font-sans antialiased bg-background text-foreground; }
 }
 
-/* Утиліти для бейджів тональності (стандартні назви) */
-.badge-positive { @apply bg-green-50 text-green-700 border border-green-200 text-xs px-2.5 py-0.5 rounded-full font-medium; }
-.badge-negative { @apply bg-red-50 text-red-700 border border-red-200 text-xs px-2.5 py-0.5 rounded-full font-medium; }
-.badge-neutral  { @apply bg-gray-100 text-gray-600 border border-gray-200 text-xs px-2.5 py-0.5 rounded-full font-medium; }
+/* Утиліти для бейджів тональності*/
+.wf-badge-positive,
+.badge-positive {
+  @apply bg-green-100 text-green-800 border border-green-300 text-xs px-2.5 py-0.5 rounded-full font-medium;
+  @apply dark:bg-green-900/30 dark:text-green-400 dark:border-green-700;
+}
 
-/* Дублікати з префіксом wf для сумісності з іншими частинами інтерфейсу */
-.wf-badge-positive { @apply bg-green-50 text-green-700 border border-green-200 text-xs px-2.5 py-0.5 rounded-full font-medium; }
-.wf-badge-negative { @apply bg-red-50 text-red-700 border border-red-200 text-xs px-2.5 py-0.5 rounded-full font-medium; }
-.wf-badge-neutral  { @apply bg-gray-100 text-gray-600 border border-gray-200 text-xs px-2.5 py-0.5 rounded-full font-medium; }
+.wf-badge-negative,
+.badge-negative {
+  @apply bg-red-100 text-red-800 border border-red-300 text-xs px-2.5 py-0.5 rounded-full font-medium;
+  @apply dark:bg-red-900/30 dark:text-red-400 dark:border-red-700;
+}
+
+.wf-badge-neutral,
+.badge-neutral {
+  @apply text-muted-foreground text-gray-700 border border-gray-300 text-xs px-2.5 py-0.5 rounded-full font-medium;
+  @apply dark:bg-gray-800 dark:text-muted-foreground dark:border-gray-600;
+}
 
 /* Базовий клас картки для уніфікації вигляду контейнерів */
 .card { @apply bg-card rounded-xl border border-border shadow-sm; }

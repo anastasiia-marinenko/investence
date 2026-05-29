@@ -169,10 +169,10 @@ export default function History() {
                     <td
                       className={`py-2.5 text-right font-mono ${
                         (a.sentiment_score ?? 0) > 0.2
-                          ? "text-green-600"
+                          ? "text-green-600 dark:text-green-400"
                           : (a.sentiment_score ?? 0) < -0.2
-                          ? "text-red-600"
-                          : "text-gray-500"
+                          ? "text-red-600 dark:text-red-400"
+                          : "text-muted-foreground"
                       }`}
                     >
                       {a.sentiment_score != null

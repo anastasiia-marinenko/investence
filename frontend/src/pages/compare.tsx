@@ -274,7 +274,7 @@ export default function Compare() {
                               </span>
                             </InfoRow>
                             <InfoRow label="Зміна за день">
-                              <span className={`font-mono ${(q.data.daily_change ?? 0) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                              <span className={`font-mono ${(q.data.daily_change ?? 0) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                                 {q.data.daily_change != null
                                   ? `${q.data.daily_change >= 0 ? "+" : ""}${q.data.daily_change.toFixed(2)}%`
                                   : "–"}
@@ -289,8 +289,8 @@ export default function Compare() {
                                 }
                               >
                               <span className={`font-mono font-semibold ${
-                                q.data.news.avg_sentiment > 0.2 ? "text-green-600"
-                                : q.data.news.avg_sentiment < -0.2 ? "text-red-600" : ""
+                                q.data.news.avg_sentiment > 0.2 ? "text-green-600 dark:text-green-400"
+                                : q.data.news.avg_sentiment < -0.2 ? "text-red-600 dark:text-red-400" : ""
                               }`}>
                                 {q.data.news.avg_sentiment > 0 ? "+" : ""}
                                 {q.data.news.avg_sentiment.toFixed(2)}

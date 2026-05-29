@@ -58,10 +58,10 @@ const PIE_COLORS = { positive: "#22c55e", negative: "#ef4444", neutral: "#a1a1aa
 
 // Повертає Tailwind-клас кольору тексту залежно від значення тональності
 function sentimentColor(score: number | null) {
-  if (score == null) return "text-gray-500";
-  if (score > 0.2) return "text-green-600";
-  if (score < -0.2) return "text-red-600";
-  return "text-gray-500";
+  if (score == null) return "text-muted-foreground";
+  if (score > 0.2) return "text-green-600 dark:text-green-400";
+  if (score < -0.2) return "text-red-600 dark:text-red-400";
+  return "text-muted-foreground";
 }
 
 // Міні-прогресбар для візуалізації сили тональності
@@ -69,7 +69,7 @@ function SentimentBar({ score }: { score: number | null }) {
   const v = Math.min(100, Math.abs((score ?? 0) * 100));
   const color = (score ?? 0) > 0.2 ? "bg-green-500" : (score ?? 0) < -0.2 ? "bg-red-500" : "bg-gray-400";
   return (
-    <div className="w-20 bg-gray-100 rounded-full h-1.5">
+    <div className="w-20 bg-muted rounded-full h-1.5">
       <div className={`h-1.5 rounded-full ${color}`} style={{ width: `${v}%` }} />
     </div>
   );
@@ -147,10 +147,10 @@ export default function Analytics() {
       ),
       value: data?.summary.market_sentiment ?? "–",
       color: data?.summary.market_sentiment === "Позитивний"
-        ? "text-green-600"
+        ? "text-green-600 dark:text-green-400"
         : data?.summary.market_sentiment === "Негативний"
-        ? "text-red-600"
-        : "text-gray-500",
+        ? "text-red-600 dark:text-red-400"
+        : "text-muted-foreground",
     },
     {
       id: "avg_price_change",
@@ -163,7 +163,7 @@ export default function Analytics() {
       value: data?.summary.avg_price_change != null
         ? `${data.summary.avg_price_change >= 0 ? "+" : ""}${data.summary.avg_price_change.toFixed(2)}%`
         : "–",
-      color: (data?.summary.avg_price_change ?? 0) >= 0 ? "text-green-600" : "text-red-600",
+      color: (data?.summary.avg_price_change ?? 0) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400",
     },
     {
       id: "developer_activity",
@@ -233,7 +233,13 @@ export default function Analytics() {
                       `${value} новин (${totalSentNews > 0 ? ((value / totalSentNews) * 100).toFixed(1) : 0}%)`,
                       name,
                     ]}
-                    contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                    contentStyle={{
+                    fontSize: 12,
+                    borderRadius: 8,
+                    backgroundColor: "hsl(var(--card))",
+                    borderColor: "hsl(var(--border))",
+                    color: "hsl(var(--foreground))",
+                  }}
                   />
                   {/* Легенда з кастомним форматуванням: назва + відсоток + кількість */}
                   <Legend
@@ -481,14 +487,14 @@ export default function Analytics() {
                       </td>
                       {/* Колір зміни: зелений для +, червоний для - */}
                       <td className={`py-2.5 text-right font-mono font-semibold ${
-                        (a.change_day_pct ?? 0) >= 0 ? "text-green-600" : "text-red-600"
+                        (a.change_day_pct ?? 0) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                       }`}>
                         {a.change_day_pct != null
                           ? `${a.change_day_pct >= 0 ? "+" : ""}${a.change_day_pct.toFixed(2)}%`
                           : "–"}
                       </td>
                       <td className={`py-2.5 text-right font-mono hidden md:table-cell ${
-                        (a.change_30d_pct ?? 0) >= 0 ? "text-green-600" : "text-red-600"
+                        (a.change_30d_pct ?? 0) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                       }`}>
                         {a.change_30d_pct != null
                           ? `${a.change_30d_pct >= 0 ? "+" : ""}${a.change_30d_pct.toFixed(2)}%`
@@ -626,10 +632,10 @@ export default function Analytics() {
                           <span
                             className={`text-xs px-2 py-0.5 rounded-full font-medium border ${
                               a.activity_level === "high"
-                                ? "bg-green-50 text-green-700 border-green-200"
-                                : a.activity_level === "medium"
-                                ? "bg-gray-100 text-gray-600 border-gray-200"
-                                : "bg-red-50 text-red-700 border-red-200"
+                              ? "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700"
+                              : a.activity_level === "medium"
+                              ? "bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600"
+                              : "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700"
                             }`}
                           >
                             {a.activity_level === "high"

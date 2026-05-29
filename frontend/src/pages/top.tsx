@@ -125,7 +125,7 @@ export default function Top() {
                       {/* Динамічний колір залежно від знаку денної зміни */}
                       <td
                         className={`px-2 py-2 text-right font-mono text-xs whitespace-nowrap hidden xs:table-cell sm:table-cell ${
-                          (a.daily_change ?? 0) >= 0 ? "text-green-600" : "text-red-600"
+                          (a.daily_change ?? 0) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                         }`}
                       >
                         {a.daily_change != null
@@ -136,10 +136,10 @@ export default function Top() {
                       <td
                         className={`px-2 py-2 text-right font-mono font-semibold text-xs whitespace-nowrap ${
                           (a.sentiment_score ?? 0) > 0.2
-                            ? "text-green-600"
+                            ? "text-green-600 dark:text-green-400"
                             : (a.sentiment_score ?? 0) < -0.2
-                            ? "text-red-600"
-                            : "text-gray-500"
+                            ? "text-red-600 dark:text-red-400"
+                            : "text-muted-foreground"
                         }`}
                       >
                         {a.sentiment_score != null

@@ -115,7 +115,7 @@ export default function Settings() {
 
         {/* Індикатор успішного збереження */}
         {saved && (
-          <p className="text-sm text-green-600 font-medium text-center animate-in fade-in">
+          <p className="text-sm text-green-600 dark:text-green-400 font-medium text-center animate-in fade-in">
             Налаштування збережено
           </p>
         )}

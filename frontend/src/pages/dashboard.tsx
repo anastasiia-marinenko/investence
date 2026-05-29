@@ -117,7 +117,7 @@ export default function Dashboard() {
                       <div className="flex items-center gap-1">
                         <span
                           className={`font-mono font-medium ${
-                            data!.daily_change >= 0 ? "text-green-600" : "text-red-600"
+                            data!.daily_change >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                           }`}
                         >
                           {data!.daily_change >= 0 ? "+" : ""}
@@ -235,7 +235,13 @@ export default function Dashboard() {
                 <Tooltip
                   formatter={(v: number) => [formatPrice(v), "Ціна"]}
                   labelFormatter={(l) => `Дата: ${l}`}
-                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                  contentStyle={{
+                  fontSize: 12,
+                  borderRadius: 8,
+                  backgroundColor: "hsl(var(--card))",
+                  borderColor: "hsl(var(--border))",
+                  color: "hsl(var(--foreground))",
+                }}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Area
@@ -268,10 +274,10 @@ export default function Dashboard() {
                   <span
                     className={`text-2xl font-bold font-mono ${
                       (data?.news?.avg_sentiment ?? 0) > 0.2
-                        ? "text-green-600"
+                        ? "text-green-600 dark:text-green-400"
                         : (data?.news?.avg_sentiment ?? 0) < -0.2
-                        ? "text-red-600"
-                        : "text-gray-500"
+                        ? "text-red-600 dark:text-red-400"
+                        : "text-muted-foreground"
                     }`}
                   >
                     {(data?.news?.avg_sentiment ?? 0) > 0 ? "+" : ""}
@@ -354,10 +360,10 @@ export default function Dashboard() {
                     <span
                       className={`text-xs font-mono ${
                         n.sentiment_score > 0
-                          ? "text-green-600"
+                          ? "text-green-600 dark:text-green-400"
                           : n.sentiment_score < 0
-                          ? "text-red-600"
-                          : "text-gray-500"
+                          ? "text-red-600 dark:text-red-400"
+                          : "text-muted-foreground"
                       }`}
                     >
                       {n.sentiment_score > 0 ? "+" : ""}

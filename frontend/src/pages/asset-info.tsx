@@ -134,7 +134,7 @@ export default function AssetInfo() {
                     ? `${data.daily_change >= 0 ? "+" : ""}${data.daily_change.toFixed(2)}%`
                     : undefined}
                   valueClass={data?.daily_change != null
-                    ? data.daily_change >= 0 ? "text-green-600" : "text-red-600"
+                    ? data.daily_change >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                     : ""}
                 />
                 <Row
