@@ -121,7 +121,6 @@ investence/
 │
 ├── backend/                              # Backend частина застосунку
 │   ├── app/
-│   │   ├── __pycache__/
 │   │   │
 │   │   ├── api/                          # FastAPI API маршрути
 │   │   │   ├── __init__.py
@@ -172,6 +171,7 @@ investence/
 │   │   ├── components/
 │   │   │   ├── ui/
 │   │   │   │   ├── card.tsx              # UI Card компонент
+│   │   │   │   ├── info-tooltip.tsx      # Info Tooltip компонент
 │   │   │   │   ├── toast.tsx             # Toast повідомлення
 │   │   │   │   ├── toaster.tsx           # Toast manager
 │   │   │   │   └── tooltip.tsx           # Tooltip компонент
@@ -204,6 +204,8 @@ investence/
 │   │   ├── index.css                     # Глобальні стилі
 │   │   └── main.tsx                      # Точка входу frontend
 │   │
+│   ├── .env.development                  # env-файл для development
+│   ├── .env.production                   # env-файл для production
 │   ├── Dockerfile                        # Docker frontend
 │   ├── index.html                        # HTML шаблон Vite
 │   ├── nginx.conf                        # Nginx конфігурація
@@ -465,6 +467,26 @@ docker-compose up --build
 - `GitHub Actions CI/CD`
 - `PostgreSQL database`
 - `Nginx frontend serving`
+
+---
+
+## Nginx proxy для локального запуску
+
+У файлі `frontend/nginx.conf` блок:
+
+location /api/ {
+
+    proxy_pass http://app:8000/api/;
+
+    proxy_set_header Host $host;
+
+    proxy_set_header X-Real-IP $remote_addr;
+
+}
+
+використовується лише для локального запуску через docker-compose.
+
+Під час Railway deployment цей блок потрібно закоментувати або видалити, оскільки сервіс app недоступний у production-середовищі Railway.
 
 ---
 
